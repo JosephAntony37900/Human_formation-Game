@@ -1,5 +1,5 @@
-from scenes.IntroSceneV1 import IntroScene
+from scenes.Level1 import Level1
 
 if __name__ == "__main__":
-    game = IntroScene()
+    game = Level1()
     game.run()
