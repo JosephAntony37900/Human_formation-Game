@@ -1,4 +1,3 @@
-# inputs/keyboard.py
 import pygame
 
 def get_keys():
