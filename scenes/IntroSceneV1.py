@@ -1,5 +1,6 @@
 import pygame
 import time
+import scenes
 from scenes.Level1 import Level1
 from config.Display_settings import DisplaySettings
 
@@ -11,7 +12,7 @@ class IntroScene:
         self.clock = pygame.time.Clock()
         self.running = True
 
-        self.background = pygame.image.load("assets/background1.jpg")
+        self.background = pygame.image.load("assets/backgrounds/background1.jpg")
         self.background = pygame.transform.scale(self.background, self.screen.get_size())
 
         self.font = pygame.font.Font("assets/Pixelify_Sans/pixelfont.ttf", 55)
