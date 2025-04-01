@@ -12,7 +12,7 @@ class IntroScene:
         self.clock = pygame.time.Clock()
         self.running = True
 
-        self.background = pygame.image.load("assets/backgrounds/background1.jpg")
+        self.background = pygame.image.load("assets/backgrounds/Home.png")
         self.background = pygame.transform.scale(self.background, self.screen.get_size())
 
         self.font = pygame.font.Font("assets/Pixelify_Sans/pixelfont.ttf", 55)
