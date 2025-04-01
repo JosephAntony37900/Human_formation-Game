@@ -30,7 +30,13 @@ class Level1:
         self.health_font = pygame.font.Font(None, 24)
 
         self.kill_count = 0
-        self.kill_font = pygame.font.Font(None, 24)
+        try:
+            self.kill_font = pygame.font.Font("assets/Pixelify_Sans/pixelfont.ttf", 25)
+            self.game_over_font = pygame.font.Font("assets/Pixelify_Sans/pixelfont.ttf", 60)
+        except:
+            print("Error cargando Pixelify Sans, usando fuente por defecto")
+            self.kill_font = pygame.font.Font(None, 24)
+            self.game_over_font = pygame.font.Font(None, 60)
 
         self.obstacles = pygame.sprite.Group()
         self.enemies = pygame.sprite.Group()
@@ -62,6 +68,7 @@ class Level1:
         self.max_allowed_y = 800
         self.min_allowed_x = 40
         self.max_allowed_x = pygame.display.Info().current_w - 40
+        self.game_over = False
 
     def run(self):
         while self.running:
@@ -79,55 +86,56 @@ class Level1:
                 self.running = False
 
     def update(self):
-        keys = get_keys()
-        if not self.game_paused:
-            self.player.update(keys, self.min_allowed_x, self.max_allowed_x, 300, self.max_allowed_y, self)
-            self.player.bullets.update()
-            self.spawn_enemies()
-            self.update_obstacles()
-            self.update_enemies()
+        if not self.game_over:
+            keys = get_keys()
+            if not self.game_paused:
+                self.player.update(keys, self.min_allowed_x, self.max_allowed_x, 300, self.max_allowed_y, self)
+                self.player.bullets.update()
+                self.spawn_enemies()
+                self.update_obstacles()
+                self.update_enemies()
 
-        current_time = pygame.time.get_ticks()
-        if self.current_text_index <= self.max_texts:
-            if current_time - self.last_text_switch >= self.text_switch_time:
-                self.narrator.update(self.texts[self.current_text_index])
-                self.current_text_index += 1
-                self.last_text_switch = current_time
-        elif self.time_after_last_message is None:
-            self.time_after_last_message = current_time
+            current_time = pygame.time.get_ticks()
+            if self.current_text_index <= self.max_texts:
+                if current_time - self.last_text_switch >= self.text_switch_time:
+                    self.narrator.update(self.texts[self.current_text_index])
+                    self.current_text_index += 1
+                    self.last_text_switch = current_time
+            elif self.time_after_last_message is None:
+                self.time_after_last_message = current_time
 
-        if self.time_after_last_message is not None and current_time - self.time_after_last_message >= self.fade_wait_time:
-            if not self.fade_started:
-                self.narrator.start_fade_out()
-                self.fade_started = True
-            self.narrator.update_fade()
-            if self.narrator.alpha <= 0:
-                self.game_paused = False
+            if self.time_after_last_message is not None and current_time - self.time_after_last_message >= self.fade_wait_time:
+                if not self.fade_started:
+                    self.narrator.start_fade_out()
+                    self.fade_started = True
+                self.narrator.update_fade()
+                if self.narrator.alpha <= 0:
+                    self.game_paused = False
 
-        self.narrator.update_speaking()
+            self.narrator.update_speaking()
 
     def spawn_enemies(self):
         current_time = pygame.time.get_ticks()
-        if current_time - self.start_time < 5000:
+        if current_time - self.start_time < 3000:
             return
         
         if not self.spawn_enabled and self.background_y >= self.spawn_background_y_threshold:
             self.spawn_enabled = True
 
         if self.spawn_enabled:
-            if len(self.obstacles) < 5 and random.random() < 0.02:
+            middle_third_start = self.screen.get_width() // 3
+            middle_third_end = (self.screen.get_width() * 2) // 3
+            middle_third_width = middle_third_end - middle_third_start
+
+            if len(self.obstacles) < 7 and random.random() < 0.03:
                 obstacle = Obstacle()
-                obstacle.rect.x = random.randint(100, self.screen.get_width() - 100)
-                while any(abs(obstacle.rect.x - other.rect.x) < 100 for other in self.obstacles):
-                    obstacle.rect.x = random.randint(100, self.screen.get_width() - 100)
+                obstacle.rect.x = middle_third_start + random.randint(0, middle_third_width - obstacle.rect.width)
                 self.all_sprites.add(obstacle)
                 self.obstacles.add(obstacle)
 
-            if len(self.enemies) < 3 and random.random() < 0.01:
+            if len(self.enemies) < 8 and random.random() < 0.04:
                 enemy = EnemyLeucocito()
-                enemy.rect.x = random.randint(100, self.screen.get_width() - 100)
-                while any(abs(enemy.rect.x - other.rect.x) < 100 for other in self.enemies):
-                    enemy.rect.x = random.randint(100, self.screen.get_width() - 100)
+                enemy.rect.x = middle_third_start + random.randint(0, middle_third_width - enemy.rect.width)
                 self.all_sprites.add(enemy)
                 self.enemies.add(enemy)
 
@@ -144,34 +152,27 @@ class Level1:
                 enemy.kill()
 
     def check_collisions(self):
-        if not self.game_paused:
-            # colision con obstaculos (gas)
+        if not self.game_paused and not self.game_over:
             hits = pygame.sprite.spritecollide(self.player, self.obstacles, False)
             if hits:
-                if self.player.take_damage(10.0):
-                    self.player_lives -= 10.0
+                if self.player.take_damage(15.0):
+                    self.player_lives -= 15.0
                     print(f"Vida restante (tras tocar gas): {self.player_lives}%")
                     if self.player_lives <= 0:
-                        self.game_over()
-            # colision con enemigos (leucocitos)
+                        self.game_over = True
             hits = pygame.sprite.spritecollide(self.player, self.enemies, False)
             if hits:
-                if self.player.take_damage(20.0):
-                    self.player_lives -= 20.0
+                if self.player.take_damage(25.0):
+                    self.player_lives -= 25.0
                     print(f"Vida restante (tras tocar leucocito): {self.player_lives}%")
                     if self.player_lives <= 0:
-                        self.game_over()
-            # colision de proyectiles con leucocitos
+                        self.game_over = True
             for bullet in self.player.bullets:
                 hits = pygame.sprite.spritecollide(bullet, self.enemies, True)
                 if hits:
-                    self.kill_count += len(hits)  # incrementar el contador por cada leucocito eliminado
+                    self.kill_count += len(hits)
                     print(f"Leucocitos eliminados: {self.kill_count}")
                     bullet.kill()
-
-    def game_over(self):
-        print("Game Over!")
-        self.running = False
 
     def draw(self):
         if self.background:
@@ -186,7 +187,7 @@ class Level1:
         self.player.bullets.draw(self.screen)
         self.player.draw_weapon(self.screen)
 
-        if self.game_paused:
+        if self.game_paused and not self.game_over:
             overlay = pygame.Surface((self.screen.get_width(), self.screen.get_height()), pygame.SRCALPHA)
             overlay.fill((0, 0, 0, 128))
             self.screen.blit(overlay, (0, 0))
@@ -205,5 +206,14 @@ class Level1:
 
         kill_text = self.kill_font.render(f"Leucocitos: {self.kill_count}", True, (255, 255, 255))
         self.screen.blit(kill_text, (self.health_bar_x, self.health_bar_y + self.health_bar_height + 5))
+
+        if self.game_over:
+            overlay = pygame.Surface((self.screen.get_width(), self.screen.get_height()), pygame.SRCALPHA)
+            overlay.fill((0, 0, 0, 200))
+            self.screen.blit(overlay, (0, 0))
+            
+            game_over_text = self.game_over_font.render("GAME OVER", True, (255, 0, 0))
+            game_over_rect = game_over_text.get_rect(center=(self.screen.get_width() // 2, self.screen.get_height() // 2))
+            self.screen.blit(game_over_text, game_over_rect)
 
         pygame.display.flip()
