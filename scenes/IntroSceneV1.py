@@ -1,7 +1,7 @@
 import pygame
 import time
 import scenes
-from scenes.Level1 import Level1
+from scenes.cell_level_zones.cell_level import CellLevel
 from config.Display_settings import DisplaySettings
 
 class IntroScene:
@@ -96,6 +96,6 @@ class IntroScene:
             pygame.time.delay(30) 
 
         self.running = False
-        game = Level1()
+        game = CellLevel()
         game.run()
 
