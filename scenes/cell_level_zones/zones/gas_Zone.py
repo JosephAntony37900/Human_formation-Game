@@ -16,11 +16,14 @@ class GasZone:
         self.full_map_spawn_delay = 20000  
         self.full_map_spawn = False
 
+        self.music_start_time = pygame.time.get_ticks()
+        self.music_started = False
+
         screen_width = self.screen.get_width()
         screen_height = self.screen.get_height()
         self.playable_area = pygame.Rect(50, 50, screen_width - 100, screen_height - 100)
 
-    def spawn_gases(self, background_y, player_x, player_y):
+    def spawn_gases(self, background_y, player_x, player_y, min_allowed_y, max_allowed_y):
         current_time = pygame.time.get_ticks()
 
         if current_time - self.start_time < self.spawn_delay:
@@ -59,7 +62,13 @@ class GasZone:
             self.gases.add(gas)
             self.last_spawn_time = current_time
 
+        if not self.music_started and current_time - self.music_start_time >= 15000:
+            pygame.mixer.music.load("assets/music/Cosmicv1.mp3")
+            pygame.mixer.music.play(-1)  
+            self.music_started = True
+
     def update_gases(self):
+        """Actualiza los gases y los elimina cuando ya no son visibles."""
         for gas in self.gases:
             gas.update()
             if gas.rect.y > self.screen.get_height():

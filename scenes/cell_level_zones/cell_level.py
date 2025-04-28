@@ -111,7 +111,8 @@ class CellLevel:
 
                 player_x = self.player.rect.centerx
                 player_y = self.player.rect.centery
-                self.gas_zone.spawn_gases(self.background_y, player_x, player_y)
+                # CORRECCIÓN AQUÍ: Agregar los argumentos faltantes
+                self.gas_zone.spawn_gases(self.background_y, player_x, player_y, self.min_allowed_y, self.max_allowed_y)
 
                 if self.zone == "gas" and self.gases_avoided >= 20:
                     self.zone = "leucocito"
