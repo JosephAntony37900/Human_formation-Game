@@ -76,6 +76,10 @@ class CellLevel:
         self.max_allowed_x = pygame.display.Info().current_w - 40
 
         self.game_over = False
+        self.gases_avoided = 0
+        self.zone = "gas"
+        self.last_enemy_spawn_time = pygame.time.get_ticks()
+        self.enemy_spawn_interval = 2000
 
     def run(self):
         while self.running:
@@ -98,10 +102,23 @@ class CellLevel:
             if not self.game_paused:
                 self.player.update(keys, self.min_allowed_x, self.max_allowed_x, 300, self.max_allowed_y, self)
                 self.player.bullets.update()
-                self.spawn_enemies()
+
                 self.update_obstacles()
                 self.update_enemies()
+                self.gas_zone.update_gases()
+
                 self.background_y += self.background_speed
+
+                player_x = self.player.rect.centerx
+                player_y = self.player.rect.centery
+                self.gas_zone.spawn_gases(self.background_y, player_x, player_y)
+
+                if self.zone == "gas" and self.gases_avoided >= 20:
+                    self.zone = "leucocito"
+                    print("¡Has pasado a la zona de leucocitos!")
+
+                if self.zone == "leucocito":
+                    self.handle_enemy_spawning()
 
             current_time = pygame.time.get_ticks()
             if self.current_text_index <= self.max_texts:
@@ -122,34 +139,36 @@ class CellLevel:
 
             self.narrator.update_speaking()
 
-    def spawn_enemies(self):
+    def handle_enemy_spawning(self):
         current_time = pygame.time.get_ticks()
+
         if current_time - self.start_time < 3000:
             return
 
         if not self.spawn_enabled and self.background_y >= self.spawn_background_y_threshold:
             self.spawn_enabled = True
 
-        if self.spawn_enabled:
-            middle_third_start = self.screen.get_width() // 3
-            middle_third_end = (self.screen.get_width() * 2) // 3
-            middle_third_width = middle_third_end - middle_third_start
+        if self.spawn_enabled and current_time - self.last_enemy_spawn_time >= self.enemy_spawn_interval:
+            if len(self.enemies) < 8:
+                middle_third_start = self.screen.get_width() // 3
+                middle_third_end = (self.screen.get_width() * 2) // 3
+                middle_third_width = middle_third_end - middle_third_start
 
-            self.gas_zone.spawn_gases(self.background_y)
-
-            if len(self.enemies) < 8 and random.random() < 0.04:
                 enemy = EnemyLeucocito()
                 enemy.rect.x = middle_third_start + random.randint(0, middle_third_width - enemy.rect.width)
                 self.all_sprites.add(enemy)
                 self.enemies.add(enemy)
 
-            self.gas_zone.update_gases()
+            self.last_enemy_spawn_time = current_time
 
     def update_obstacles(self):
         for gas in self.obstacles:
             gas.update()
             if gas.rect.y > self.screen.get_height():
                 gas.kill()
+                if self.zone == "gas":
+                    self.gases_avoided += 1
+                    print(f"Gases esquivados: {self.gases_avoided}/20")
 
     def update_enemies(self):
         for enemy in self.enemies:
@@ -206,22 +225,14 @@ class CellLevel:
         pygame.draw.rect(self.screen, (100, 100, 100), (self.health_bar_x, self.health_bar_y, self.health_bar_width, self.health_bar_height))
         health_percentage = self.player_lives / self.max_lives
         current_health_width = self.health_bar_width * health_percentage
-        pygame.draw.rect(self.screen, (0, 255, 0), (self.health_bar_x, self.health_bar_y, current_health_width, self.health_bar_height))
-        pygame.draw.rect(self.screen, (0, 0, 0), (self.health_bar_x, self.health_bar_y, self.health_bar_width, self.health_bar_height), 2)
+        pygame.draw.rect(self.screen, (255, 0, 0), (self.health_bar_x, self.health_bar_y, current_health_width, self.health_bar_height))
 
-        percentage_text = self.health_font.render(f"{int(self.player_lives)}%", True, (255, 255, 255))
-        self.screen.blit(percentage_text, (self.health_bar_x + self.health_bar_width + 10, self.health_bar_y))
-
-        kill_text = self.kill_font.render(f"Leucocitos: {self.kill_count}", True, (255, 255, 255))
-        self.screen.blit(kill_text, (self.health_bar_x, self.health_bar_y + self.health_bar_height + 5))
+        health_text = self.health_font.render(f"Vida: {int(self.player_lives)}%", True, (255, 255, 255))
+        self.screen.blit(health_text, (self.health_bar_x - health_text.get_width() - 10, self.health_bar_y))
 
         if self.game_over:
-            overlay = pygame.Surface((self.screen.get_width(), self.screen.get_height()), pygame.SRCALPHA)
-            overlay.fill((0, 0, 0, 200))
-            self.screen.blit(overlay, (0, 0))
+            game_over_text = self.game_over_font.render("¡Juego Terminado!", True, (255, 0, 0))
+            self.screen.blit(game_over_text, (self.screen.get_width() // 2 - game_over_text.get_width() // 2, self.screen.get_height() // 2))
 
-            game_over_text = self.game_over_font.render("GAME OVER", True, (255, 0, 0))
-            game_over_rect = game_over_text.get_rect(center=(self.screen.get_width() // 2, self.screen.get_height() // 2))
-            self.screen.blit(game_over_text, game_over_rect)
 
-        pygame.display.flip()
+        pygame.display.update()

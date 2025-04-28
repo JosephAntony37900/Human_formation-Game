@@ -47,8 +47,8 @@ class Player(pygame.sprite.Sprite):
 
     def update(self, keys, min_allowed_x, max_allowed_x, min_allowed_y, max_allowed_y, level):
         screen_width = pygame.display.Info().current_w
-        middle_third_start = screen_width // 5  #aqui ya funcionan los limites del player
-        middle_third_end = (screen_width * 4) // 5 #,,
+        middle_third_start = screen_width // 8  #aqui ya funcionan los limites del player
+        middle_third_end = (screen_width * 7) // 8 #,,
         
         restricted_min_x = middle_third_start
         restricted_max_x = middle_third_end - self.rect.width
