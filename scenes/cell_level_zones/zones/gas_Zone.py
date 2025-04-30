@@ -7,69 +7,59 @@ class GasZone:
         self.screen = screen
         self.all_sprites = all_sprites
         self.gases = pygame.sprite.Group()
-        self.max_obstacles = 10
-        self.min_distance_between_gases = 50  
-        self.spawn_delay = 10000  
-        self.start_time = pygame.time.get_ticks()
-        self.last_spawn_time = pygame.time.get_ticks()
-        self.spawn_interval = 500  
-        self.full_map_spawn_delay = 20000  
+        self.spawned_zones = set()
+        self.spawn_interval_y = 400
+        self.gas_radius = 100
+        self.spawn_zone_height = 300
+        self.max_obstacles_per_zone = 5
         self.full_map_spawn = False
-
+        self.spawn_delay = 10000
+        self.full_map_spawn_delay = 20000
+        self.start_time = pygame.time.get_ticks()
         self.music_start_time = pygame.time.get_ticks()
         self.music_started = False
 
-        screen_width = self.screen.get_width()
-        screen_height = self.screen.get_height()
-        self.playable_area = pygame.Rect(50, 50, screen_width - 100, screen_height - 100)
-
     def spawn_gases(self, background_y, player_x, player_y, min_allowed_y, max_allowed_y):
         current_time = pygame.time.get_ticks()
-
         if current_time - self.start_time < self.spawn_delay:
             return
-
         if not self.full_map_spawn and current_time - self.start_time > self.full_map_spawn_delay:
             self.full_map_spawn = True
-            print("¡Modo gases en toda la zona jugable activado!")
 
-        if len(self.gases) >= self.max_obstacles:
+        zone_y = (player_y + 300) // self.spawn_interval_y * self.spawn_interval_y
+        if zone_y in self.spawned_zones:
             return
 
-        if current_time - self.last_spawn_time < self.spawn_interval:
-            return
+        self.spawned_zones.add(zone_y)
 
-        if self.full_map_spawn:
-            x = random.randint(self.playable_area.left, self.playable_area.right)
-            y = random.randint(self.playable_area.top, self.playable_area.bottom)
-        else:
-            x = random.randint(player_x - 150, player_x + 150)
-            y = random.randint(player_y - 150, player_y + 150)
+        for _ in range(self.max_obstacles_per_zone):
+            if self.full_map_spawn:
+                x = random.randint(50, self.screen.get_width() - 50)
+                y = random.randint(zone_y, zone_y + self.spawn_zone_height)
+            else:
+                x = random.randint(player_x - self.gas_radius, player_x + self.gas_radius)
+                y = random.randint(zone_y, zone_y + self.spawn_zone_height)
 
-            x = max(self.playable_area.left, min(x, self.playable_area.right))
-            y = max(self.playable_area.top, min(y, self.playable_area.bottom))
+            x = max(50, min(x, self.screen.get_width() - 50))
+            y = max(min_allowed_y, min(y, max_allowed_y))
 
-        too_close = False
-        for gas in self.gases:
-            distance = ((gas.rect.centerx - x) ** 2 + (gas.rect.centery - y) ** 2) ** 0.5
-            if distance < self.min_distance_between_gases:
-                too_close = True
-                break
+            too_close = any(
+                ((gas.rect.centerx - x) ** 2 + (gas.rect.centery - y) ** 2) ** 0.5 < self.gas_radius
+                for gas in self.gases
+            )
 
-        if not too_close:
-            gas = Obstacle(x, y)
-            self.all_sprites.add(gas)
-            self.gases.add(gas)
-            self.last_spawn_time = current_time
+            if not too_close:
+                gas = Obstacle(x, y)
+                self.all_sprites.add(gas)
+                self.gases.add(gas)
 
         if not self.music_started and current_time - self.music_start_time >= 15000:
             pygame.mixer.music.load("assets/music/Cosmicv1.mp3")
-            pygame.mixer.music.play(-1)  
+            pygame.mixer.music.play(-1)
             self.music_started = True
 
     def update_gases(self):
-        """Actualiza los gases y los elimina cuando ya no son visibles."""
         for gas in self.gases:
             gas.update()
-            if gas.rect.y > self.screen.get_height():
+            if gas.rect.y > self.screen.get_height() + 200:
                 gas.kill()

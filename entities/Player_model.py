@@ -6,6 +6,7 @@ class Player(pygame.sprite.Sprite):
     def __init__(self, x, y):
         super().__init__()
         self.frames = self.load_frames("assets/characters/cristobal/")
+        self.rest_frames = self.load_frames("assets/characters/cristobal/rest/")
         self.current_frame = 0
         self.image = pygame.transform.scale(self.frames[self.current_frame], (80, 80))
         self.image = self.image.convert_alpha()
@@ -19,6 +20,7 @@ class Player(pygame.sprite.Sprite):
         self.weapon_active = False
         self.last_shot = 0
         self.shoot_cooldown = 300
+        self.is_resting = False
 
         try:
             self.weapon_image = pygame.image.load("assets/weapons/Bullet.png").convert_alpha()
@@ -36,32 +38,42 @@ class Player(pygame.sprite.Sprite):
     def load_frames(self, folder_path):
         frames = []
         try:
-            for filename in sorted(os.listdir(folder_path)):
+            for filename in sorted(os.listdir(folder_path), key=lambda f: int(''.join(filter(str.isdigit, f))) if any(char.isdigit() for char in f) else 9999):
                 if filename.endswith(".png") or filename.endswith(".jpg"):
                     img_path = os.path.join(folder_path, filename)
                     frame = pygame.image.load(img_path).convert_alpha()
                     frames.append(frame)
-            return frames if frames else [pygame.image.load("assets/characters/cristobal/cristobal1.png").convert_alpha()]
-        except Exception:
-            return [pygame.image.load("assets/characters/cristobal/cristobal1.png").convert_alpha()]
+            # fallback por frames no validos en la carpeta
+            if not frames:
+                fallback = "assets/characters/cristobal/spermanauta (0).png" if "rest" not in folder_path else "assets/characters/cristobal/rest/rest(0).png"
+                frames = [pygame.image.load(fallback).convert_alpha()]
+        except Exception as e:
+            print(f"Error loading frames from {folder_path}: {e}")
+            fallback = "assets/characters/cristobal/spermanauta (0).png" if "rest" not in folder_path else "assets/characters/cristobal/rest/rest(0).png"
+            frames = [pygame.image.load(fallback).convert_alpha()]
+        return frames
 
     def update(self, keys, min_allowed_x, max_allowed_x, min_allowed_y, max_allowed_y, level):
         screen_width = pygame.display.Info().current_w
-        middle_third_start = screen_width // 8  #aqui ya funcionan los limites del player
-        middle_third_end = (screen_width * 7) // 8 #,,
-        
+        middle_third_start = screen_width // 8
+        middle_third_end = (screen_width * 7) // 8
+
         restricted_min_x = middle_third_start
         restricted_max_x = middle_third_end - self.rect.width
-        
+
+        moving = False
+
         if keys[pygame.K_a]:
             self.rect.x -= self.speed
             if self.rect.left < restricted_min_x:
                 self.rect.left = restricted_min_x
+            moving = True
 
         if keys[pygame.K_d]:
             self.rect.x += self.speed
             if self.rect.right > restricted_max_x + self.rect.width:
                 self.rect.right = restricted_max_x + self.rect.width
+            moving = True
 
         if keys[pygame.K_w]:
             if self.rect.top > min_allowed_y:
@@ -72,11 +84,13 @@ class Player(pygame.sprite.Sprite):
                     level.min_allowed_y = self.rect.y
             if self.rect.top < min_allowed_y:
                 self.rect.top = min_allowed_y
+            moving = True
 
         if keys[pygame.K_s]:
             self.rect.y += self.speed
             if self.rect.bottom > max_allowed_y:
                 self.rect.bottom = max_allowed_y
+            moving = True
 
         if keys[pygame.K_e]:
             self.weapon_active = not self.weapon_active
@@ -94,6 +108,20 @@ class Player(pygame.sprite.Sprite):
         if self.invincible:
             if current_time - self.invincibility_timer >= self.invincibility_duration:
                 self.invincible = False
+
+        # Animación de descanso o movimiento
+        if not moving:
+            if not self.is_resting:
+                self.frames = self.rest_frames
+                self.current_frame = 0
+                self.last_update = current_time
+                self.is_resting = True
+        else:
+            if self.is_resting:
+                self.frames = self.load_frames("assets/characters/cristobal/")
+                self.current_frame = 0
+                self.last_update = current_time
+                self.is_resting = False
 
         if len(self.frames) > 1:
             if current_time - self.last_update >= self.frame_rate:
