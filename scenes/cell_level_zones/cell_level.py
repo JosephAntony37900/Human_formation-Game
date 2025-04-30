@@ -111,7 +111,6 @@ class CellLevel:
 
                 player_x = self.player.rect.centerx
                 player_y = self.player.rect.centery
-                # CORRECCIÓN AQUÍ: Agregar los argumentos faltantes
                 self.gas_zone.spawn_gases(self.background_y, player_x, player_y, self.min_allowed_y, self.max_allowed_y)
 
                 if self.zone == "gas" and self.gases_avoided >= 20:
@@ -213,7 +212,7 @@ class CellLevel:
 
         self.all_sprites.draw(self.screen)
         self.player.bullets.draw(self.screen)
-        self.player.draw_weapon(self.screen)
+        self.player.draw(self.screen)
 
         if self.game_paused and not self.game_over:
             overlay = pygame.Surface((self.screen.get_width(), self.screen.get_height()), pygame.SRCALPHA)

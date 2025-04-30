@@ -7,12 +7,17 @@ class Player(pygame.sprite.Sprite):
         super().__init__()
         self.frames = self.load_frames("assets/characters/cristobal/")
         self.rest_frames = self.load_frames("assets/characters/cristobal/rest/")
+        self.shoot_frame = pygame.image.load("assets/characters/cristobal/rest_shoot/shoot(0).png").convert_alpha()
+        self.shoot_frame = pygame.transform.scale(self.shoot_frame, (100, 100))
+        self.shoot_frame.set_colorkey((0, 0, 0))
+
         self.current_frame = 0
         self.image = pygame.transform.scale(self.frames[self.current_frame], (100, 100))
         self.image = self.image.convert_alpha()
         self.image.set_colorkey((0, 0, 0))
         self.rect = self.image.get_rect()
         self.rect.topleft = (x, y)
+
         self.speed = 8
         self.last_update = pygame.time.get_ticks()
         self.frame_rate = 100
@@ -21,25 +26,6 @@ class Player(pygame.sprite.Sprite):
         self.last_shot = 0
         self.shoot_cooldown = 300
         self.is_resting = False
-
-        try:
-            holding_weapon_path = "assets/characters/cristobal/rest_gun/holding_weapon (0).png"
-            self.rest_with_weapon_frame = pygame.image.load(holding_weapon_path).convert_alpha()
-            self.rest_with_weapon_frame = pygame.transform.scale(self.rest_with_weapon_frame, (100, 100))
-            self.rest_with_weapon_frame.set_colorkey((0, 0, 0))
-        except pygame.error as e:
-            print(f"Error loading rest_with_weapon_frame: {e}")
-            self.rest_with_weapon_frame = self.image.copy()
-
-        try:
-            self.weapon_image = pygame.image.load("assets/weapons/Bullet.png").convert_alpha()
-            self.weapon_image = pygame.transform.scale(self.weapon_image, (20, 40))
-            self.weapon_image.set_colorkey((0, 0, 0))
-        except pygame.error:
-            self.weapon_image = pygame.Surface((20, 40))
-            self.weapon_image.fill((255, 0, 0))
-        self.weapon_rect = self.weapon_image.get_rect()
-
         self.invincible = False
         self.invincibility_timer = 0
         self.invincibility_duration = 1000
@@ -109,9 +95,7 @@ class Player(pygame.sprite.Sprite):
             self.bullets.add(bullet)
             level.all_sprites.add(bullet)
             self.last_shot = current_time
-
-        if self.weapon_active:
-            self.weapon_rect.bottomleft = (self.rect.right, self.rect.centery)
+            self.image = self.shoot_frame
 
         if self.invincible:
             if current_time - self.invincibility_timer >= self.invincibility_duration:
@@ -119,16 +103,15 @@ class Player(pygame.sprite.Sprite):
 
         if not moving:
             if not self.is_resting:
-                self.frames = self.rest_frames
                 self.current_frame = 0
                 self.last_update = current_time
                 self.is_resting = True
 
             if self.weapon_active:
-                self.image = self.rest_with_weapon_frame
+                self.image = pygame.transform.scale(self.shoot_frame, (80, 80))
             else:
-                self.image = pygame.transform.scale(self.frames[self.current_frame], (80, 80))
-                self.image.set_colorkey((0, 0, 0))
+                self.image = pygame.transform.scale(self.rest_frames[self.current_frame], (80, 80))
+            self.image.set_colorkey((0, 0, 0))
         else:
             if self.is_resting:
                 self.frames = self.load_frames("assets/characters/cristobal/")
@@ -143,10 +126,6 @@ class Player(pygame.sprite.Sprite):
                 self.image.set_colorkey((0, 0, 0))
                 self.last_update = current_time
 
-    def draw_weapon(self, screen):
-        if self.weapon_active:
-            screen.blit(self.weapon_image, self.weapon_rect)
-
     def take_damage(self, damage):
         if not self.invincible:
             self.invincible = True
@@ -154,3 +133,16 @@ class Player(pygame.sprite.Sprite):
             return True
         return False
 
+    def draw(self, screen):
+        screen.blit(self.image, self.rect.topleft)
+        self.bullets.draw(screen)
+
+    def reset(self, x, y):
+        self.rect.topleft = (x, y)
+        self.current_frame = 0
+        self.last_update = pygame.time.get_ticks()
+        self.weapon_active = False
+        self.last_shot = 0
+        self.invincible = False
+        self.invincibility_timer = 0
+        self.bullets.empty()
