@@ -8,7 +8,7 @@ class Player(pygame.sprite.Sprite):
         self.frames = self.load_frames("assets/characters/cristobal/")
         self.rest_frames = self.load_frames("assets/characters/cristobal/rest/")
         self.current_frame = 0
-        self.image = pygame.transform.scale(self.frames[self.current_frame], (80, 80))
+        self.image = pygame.transform.scale(self.frames[self.current_frame], (100, 100))
         self.image = self.image.convert_alpha()
         self.image.set_colorkey((0, 0, 0))
         self.rect = self.image.get_rect()
@@ -21,6 +21,15 @@ class Player(pygame.sprite.Sprite):
         self.last_shot = 0
         self.shoot_cooldown = 300
         self.is_resting = False
+
+        try:
+            holding_weapon_path = "assets/characters/cristobal/rest_gun/holding_weapon (0).png"
+            self.rest_with_weapon_frame = pygame.image.load(holding_weapon_path).convert_alpha()
+            self.rest_with_weapon_frame = pygame.transform.scale(self.rest_with_weapon_frame, (100, 100))
+            self.rest_with_weapon_frame.set_colorkey((0, 0, 0))
+        except pygame.error as e:
+            print(f"Error loading rest_with_weapon_frame: {e}")
+            self.rest_with_weapon_frame = self.image.copy()
 
         try:
             self.weapon_image = pygame.image.load("assets/weapons/Bullet.png").convert_alpha()
@@ -43,7 +52,6 @@ class Player(pygame.sprite.Sprite):
                     img_path = os.path.join(folder_path, filename)
                     frame = pygame.image.load(img_path).convert_alpha()
                     frames.append(frame)
-            # fallback por frames no validos en la carpeta
             if not frames:
                 fallback = "assets/characters/cristobal/spermanauta (0).png" if "rest" not in folder_path else "assets/characters/cristobal/rest/rest(0).png"
                 frames = [pygame.image.load(fallback).convert_alpha()]
@@ -109,13 +117,18 @@ class Player(pygame.sprite.Sprite):
             if current_time - self.invincibility_timer >= self.invincibility_duration:
                 self.invincible = False
 
-        # Animación de descanso o movimiento
         if not moving:
             if not self.is_resting:
                 self.frames = self.rest_frames
                 self.current_frame = 0
                 self.last_update = current_time
                 self.is_resting = True
+
+            if self.weapon_active:
+                self.image = self.rest_with_weapon_frame
+            else:
+                self.image = pygame.transform.scale(self.frames[self.current_frame], (80, 80))
+                self.image.set_colorkey((0, 0, 0))
         else:
             if self.is_resting:
                 self.frames = self.load_frames("assets/characters/cristobal/")
@@ -123,8 +136,7 @@ class Player(pygame.sprite.Sprite):
                 self.last_update = current_time
                 self.is_resting = False
 
-        if len(self.frames) > 1:
-            if current_time - self.last_update >= self.frame_rate:
+            if len(self.frames) > 1 and current_time - self.last_update >= self.frame_rate:
                 self.current_frame = (self.current_frame + 1) % len(self.frames)
                 self.image = pygame.transform.scale(self.frames[self.current_frame], (80, 80))
                 self.image = self.image.convert_alpha()
@@ -141,3 +153,4 @@ class Player(pygame.sprite.Sprite):
             self.invincibility_timer = pygame.time.get_ticks()
             return True
         return False
+
