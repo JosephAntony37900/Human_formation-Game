@@ -7,9 +7,7 @@ class Player(pygame.sprite.Sprite):
         super().__init__()
         self.frames = self.load_frames("assets/characters/cristobal/")
         self.rest_frames = self.load_frames("assets/characters/cristobal/rest/")
-        self.shoot_frame = pygame.image.load("assets/characters/cristobal/rest_shoot/shoot(0).png").convert_alpha()
-        self.shoot_frame = pygame.transform.scale(self.shoot_frame, (100, 100))
-        self.shoot_frame.set_colorkey((0, 0, 0))
+        self.shoot_frames = self.load_frames("assets/characters/cristobal/rest_shoot/")  # Lista de sprites de disparo
 
         self.current_frame = 0
         self.image = pygame.transform.scale(self.frames[self.current_frame], (100, 100))
@@ -30,6 +28,11 @@ class Player(pygame.sprite.Sprite):
         self.invincibility_timer = 0
         self.invincibility_duration = 1000
 
+        self.shooting = False
+        self.shoot_frame_index = 0
+        self.shoot_animation_timer = 0
+        self.shoot_animation_speed = 40  #
+
     def load_frames(self, folder_path):
         frames = []
         try:
@@ -42,7 +45,6 @@ class Player(pygame.sprite.Sprite):
                 fallback = "assets/characters/cristobal/spermanauta (0).png" if "rest" not in folder_path else "assets/characters/cristobal/rest/rest(0).png"
                 frames = [pygame.image.load(fallback).convert_alpha()]
         except Exception as e:
-            print(f"Error loading frames from {folder_path}: {e}")
             fallback = "assets/characters/cristobal/spermanauta (0).png" if "rest" not in folder_path else "assets/characters/cristobal/rest/rest(0).png"
             frames = [pygame.image.load(fallback).convert_alpha()]
         return frames
@@ -90,16 +92,18 @@ class Player(pygame.sprite.Sprite):
             self.weapon_active = not self.weapon_active
 
         current_time = pygame.time.get_ticks()
+
         if self.weapon_active and keys[pygame.K_SPACE] and (current_time - self.last_shot >= self.shoot_cooldown):
             bullet = Bullet(self.rect.centerx, self.rect.top)
             self.bullets.add(bullet)
             level.all_sprites.add(bullet)
             self.last_shot = current_time
-            self.image = self.shoot_frame
+            self.shooting = True
+            self.shoot_frame_index = 0
+            self.shoot_animation_timer = current_time
 
-        if self.invincible:
-            if current_time - self.invincibility_timer >= self.invincibility_duration:
-                self.invincible = False
+        if self.invincible and current_time - self.invincibility_timer >= self.invincibility_duration:
+            self.invincible = False
 
         if not moving:
             if not self.is_resting:
@@ -107,10 +111,20 @@ class Player(pygame.sprite.Sprite):
                 self.last_update = current_time
                 self.is_resting = True
 
-            if self.weapon_active:
-                self.image = pygame.transform.scale(self.shoot_frame, (80, 80))
+            if self.weapon_active and self.shooting:
+                if current_time - self.shoot_animation_timer >= self.shoot_animation_speed:
+                    self.shoot_frame_index += 1
+                    self.shoot_animation_timer = current_time
+                    if self.shoot_frame_index >= len(self.shoot_frames):
+                        self.shoot_frame_index = 0
+                        self.shooting = False
+
+                self.image = pygame.transform.scale(self.shoot_frames[self.shoot_frame_index], (80, 80))
+            elif self.weapon_active:
+                self.image = pygame.transform.scale(self.shoot_frames[0], (80, 80))
             else:
                 self.image = pygame.transform.scale(self.rest_frames[self.current_frame], (80, 80))
+
             self.image.set_colorkey((0, 0, 0))
         else:
             if self.is_resting:
@@ -146,3 +160,4 @@ class Player(pygame.sprite.Sprite):
         self.invincible = False
         self.invincibility_timer = 0
         self.bullets.empty()
+        self.shooting = False
