@@ -24,7 +24,7 @@ class EnemyLeucocito(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.x = random.randint(100, pygame.display.Info().current_w - 100)
         self.rect.y = -50
-        self.speed = 3  # la velocidad de caida (mas lento que el gas, ajustable pero puede mejorar, vi un juego que nos puede inspirar)
+        self.speed = 4  # la velocidad de caida (mas lento que el gas, ajustable pero puede mejorar, vi un juego que nos puede inspirar)
         self.last_update = pygame.time.get_ticks()
         self.frame_rate = 150  # 150 ms entre frames (~6.67 FPS, ajustable, lo mismo pero mas perfecto)
 
@@ -43,7 +43,6 @@ class EnemyLeucocito(pygame.sprite.Sprite):
             return [pygame.image.load("assets/enemies/leucocito/leucocito1.png").convert_alpha()]
 
     def update(self, player, bots):
-        self.rect.y += self.speed
         # movimiento del enemigo (caida)
         targets = [player] + list(bots)
 
