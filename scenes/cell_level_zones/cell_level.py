@@ -5,6 +5,7 @@ from entities.Narrador_model import Narrator
 from entities.Obstacule_gas import Obstacle
 from entities.Enemy_leucocito import EnemyLeucocito
 from entities.Bullet import Bullet
+from entities.Bot_Espermanauta import BotEspermanauta
 from inputs.keyboard import get_keys
 from .zones.gas_Zone import GasZone
 
@@ -22,6 +23,11 @@ class CellLevel:
         self.player.rect.center = (self.screen.get_width() // 2, self.screen.get_height() // 2 + 200)
         self.all_sprites = pygame.sprite.Group()
         self.all_sprites.add(self.player)
+        self.bots = pygame.sprite.Group()
+        self.bot1 = BotEspermanauta(500, 800)
+        self.bot2 = BotEspermanauta(600, 800)
+        self.bots.add(self.bot1, self.bot2)
+        self.all_sprites.add(self.bots)
         self.player_lives = 100.0
         self.max_lives = 100.0
         self.health_bar_width = 200
@@ -96,10 +102,13 @@ class CellLevel:
         if not self.game_over:
             keys = get_keys()
             if not self.game_paused:
-                self.player.update(keys, self.min_allowed_x, self.max_allowed_x, 300, self.max_allowed_y, self)
+                background_is_moving = self.player.update(keys, self.min_allowed_x, self.max_allowed_x, 300, self.max_allowed_y, self)
+                for bot in self.bots:
+                    bot.update(self.min_allowed_x, self.max_allowed_x, 300, self.max_allowed_y, self, self.enemies, self.obstacles, background_is_moving)
                 self.player.bullets.update()
                 self.spawn_enemies()
                 self.update_obstacles()
+                self.spawn_obstacles()
                 self.update_enemies()
                 self.background_y += self.background_speed
 
@@ -144,6 +153,13 @@ class CellLevel:
                 self.enemies.add(enemy)
 
             self.gas_zone.update_gases()
+    
+    def spawn_obstacles(self):
+        if random.random() < 0.02:  # ajusta la probabilidad según lo necesario
+            gas = Obstacle()
+            self.obstacles.add(gas)
+            self.all_sprites.add(gas)
+
 
     def update_obstacles(self):
         for gas in self.obstacles:
