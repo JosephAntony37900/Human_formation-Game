@@ -7,7 +7,7 @@ class Player(pygame.sprite.Sprite):
         super().__init__()
         self.frames = self.load_frames("assets/characters/cristobal/")
         self.rest_frames = self.load_frames("assets/characters/cristobal/rest/")
-        self.shoot_frames = self.load_frames("assets/characters/cristobal/rest_shoot/")  # Lista de sprites de disparo
+        self.shoot_frames = self.load_frames("assets/characters/cristobal/rest_shoot/")  
 
         self.current_frame = 0
         self.image = pygame.transform.scale(self.frames[self.current_frame], (100, 100))
@@ -31,7 +31,7 @@ class Player(pygame.sprite.Sprite):
         self.shooting = False
         self.shoot_frame_index = 0
         self.shoot_animation_timer = 0
-        self.shoot_animation_speed = 40  #
+        self.shoot_animation_speed = 40  
 
     def load_frames(self, folder_path):
         frames = []
@@ -119,11 +119,11 @@ class Player(pygame.sprite.Sprite):
                         self.shoot_frame_index = 0
                         self.shooting = False
 
-                self.image = pygame.transform.scale(self.shoot_frames[self.shoot_frame_index], (80, 80))
+                self.image = pygame.transform.scale(self.shoot_frames[self.shoot_frame_index], (100, 100))
             elif self.weapon_active:
-                self.image = pygame.transform.scale(self.shoot_frames[0], (80, 80))
+                self.image = pygame.transform.scale(self.shoot_frames[0], (100, 100))
             else:
-                self.image = pygame.transform.scale(self.rest_frames[self.current_frame], (80, 80))
+                self.image = pygame.transform.scale(self.rest_frames[self.current_frame], (100, 100))
 
             self.image.set_colorkey((0, 0, 0))
         else:
@@ -135,7 +135,7 @@ class Player(pygame.sprite.Sprite):
 
             if len(self.frames) > 1 and current_time - self.last_update >= self.frame_rate:
                 self.current_frame = (self.current_frame + 1) % len(self.frames)
-                self.image = pygame.transform.scale(self.frames[self.current_frame], (80, 80))
+                self.image = pygame.transform.scale(self.frames[self.current_frame], (100, 100))
                 self.image = self.image.convert_alpha()
                 self.image.set_colorkey((0, 0, 0))
                 self.last_update = current_time
