@@ -197,6 +197,18 @@ class CellLevel:
                     self.kill_count += len(hits)
                     print(f"Leucocitos eliminados: {self.kill_count}")
                     bullet.kill()
+            
+            # Detección de colisiones entre bots y obstáculos
+            for bot in self.bots:
+                hits = pygame.sprite.spritecollide(bot, self.obstacles, False)
+                if hits:
+                    bot.take_damage(15.0)
+
+            # Detección de colisiones entre bots y enemigos
+            for bot in self.bots:
+                hits = pygame.sprite.spritecollide(bot, self.enemies, False)
+                if hits:
+                    bot.take_damage(25.0)
 
     def draw(self):
         if self.background:
