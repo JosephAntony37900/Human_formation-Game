@@ -104,7 +104,7 @@ class CellLevel:
             if not self.game_paused:
                 background_is_moving = self.player.update(keys, self.min_allowed_x, self.max_allowed_x, 300, self.max_allowed_y, self)
                 for bot in self.bots:
-                    bot.update(self.min_allowed_x, self.max_allowed_x, 300, self.max_allowed_y, self, self.enemies, self.obstacles, background_is_moving)
+                    bot.update(self.min_allowed_x + 300, self.max_allowed_x - 300, 300, self.max_allowed_y, self, self.enemies, self.obstacles, background_is_moving)
                 self.player.bullets.update()
                 self.spawn_enemies()
                 self.update_obstacles()

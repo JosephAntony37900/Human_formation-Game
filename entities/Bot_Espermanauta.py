@@ -1,11 +1,12 @@
 import pygame
-import os
-from entities.Bullet import Bullet
+import pygame.math as pgmath
 from entities.Player_model import Player
+import random
 
 class BotEspermanauta(Player):
     def __init__(self, x, y):
         super().__init__(x, y)
+        self.image = pygame.transform.scale(self.frames[self.current_frame], (80, 80))
         self.speed = 4
         self.direction = 1
         self.direction_y = 1
@@ -13,40 +14,16 @@ class BotEspermanauta(Player):
         self.change_direction_interval = 2000
         self.max_health = 1000000
         self.health = self.max_health
+        self.random_explore_dir = pgmath.Vector2(0, 0)
+        self.last_random_time = pygame.time.get_ticks()
+        self.random_direction_duration = 1500
 
     def update(self, min_x, max_x, min_y, max_y, level, enemies, obstacles, background_is_moving):
-        # self.rect.y -= self.speed if not background_is_moving else 0
-        # if current_time - self.movement_timer > self.change_direction_interval:
-        #     self.direction *= -1
-        #     self.movement_timer = current_time
-
-        # self.rect.x += self.speed * self.direction
-
-        # if self.rect.left < min_x or self.rect.right > max_x:
-        #     self.direction *= -1  # Cambia dirección si choca con bordes
-
-        # self.rect.x += self.speed * self.direction
-
-        # if self.rect.left <= min_x or self.rect.right >= max_x:
-        #     self.direction *= -1
-        #     self.rect.x += self.speed * self.direction
-
-        # Simula disparos aleatorios o cada cierto tiempo
-#        if self.weapon_active and current_time - self.last_shot >= self.shoot_cooldown:
-#            bullet = Bullet(self.rect.centerx, self.rect.top)
-#            self.bullets.add(bullet)
-#            level.all_sprites.add(bullet)
-#            self.last_shot = current_time
-
-        # self.avoid_obstacles(obstacles)
-        # self.shoot_and_avoid_enemies(enemies, level)
+       
         self.detect_and_evade(list(obstacles) + list(enemies), background_is_moving, min_x, max_x)
 
         self.handle_animation_and_status()
 
-        # if not background_is_moving:
-        #     self.rect.y -= self.speed
-    
     def handle_animation_and_status(self):
         current_time = pygame.time.get_ticks()
 
@@ -61,42 +38,63 @@ class BotEspermanauta(Player):
                 self.last_update = current_time
 
     def detect_and_evade(self, objects, background_is_moving, min_x, max_x):
-        anticipation_distance = 40
-        forward_rect = self.rect.copy()
-        forward_rect.y -= anticipation_distance
-        will_collide = any(forward_rect.colliderect(obj.rect) for obj in objects)
+        avoidance_force = pgmath.Vector2(0, 0)
+        border_avoidance = pgmath.Vector2(0, 0)
+        margin = 50
 
-        if will_collide:
-            left_rect = self.rect.copy()
-            left_rect.x -= self.speed * 3
+        if self.rect.left < min_x + margin:
+            border_avoidance.x += 3
+        if self.rect.right > max_x - margin:
+            border_avoidance.x -= 3
 
-            right_rect = self.rect.copy()
-            right_rect.x += self.speed * 3
+        for obj in objects:
+            if self.rect.colliderect(obj.rect.inflate(100, 100)):
+                diff = pgmath.Vector2(self.rect.center) - pgmath.Vector2(obj.rect.center)
+                distance = diff.length()
+                if distance > 0:
+                    avoidance_force += diff.normalize() / distance
 
-            down_rect = self.rect.copy()
-            down_rect.y += self.speed * 3
+        total_force = avoidance_force + border_avoidance
 
-            if not any(left_rect.colliderect(obj.rect) for obj in objects):
-                if self.rect.left <= min_x or self.rect.right >= max_x:
-                    self.direction *= -1
-                self.rect.x -= self.speed * self.direction * 3.5
-                self.rect.y += self.speed * 7
-            elif not any(right_rect.colliderect(obj.rect) for obj in objects):
-                if self.rect.left <= min_x or self.rect.right >= max_x:
-                    self.direction *= -1
-                self.rect.x += self.speed * self.direction * 3.5
-                self.rect.y += self.speed * 7
-            elif not any(down_rect.colliderect(obj.rect) for obj in objects):
-                if self.rect.left <= min_x or self.rect.right >= max_x:
-                    self.direction *= -1
-                self.rect.x -= self.speed * self.direction * 3.5
-                self.rect.y += self.speed
+        if total_force.length() > 0:
+            total_force = total_force.normalize() * self.speed
+            new_x = self.rect.x + total_force.x
+
+            if min_x <= new_x <= max_x - self.rect.width:
+                self.rect.x = new_x
             else:
-                pass
+                total_force.x *= -1
+                new_x = self.rect.x + total_force.x
+                if min_x <= new_x <= max_x - self.rect.width:
+                    self.rect.x = new_x
+                else:
+                    self.rect.y += self.speed * 2
+
+            self.rect.y += total_force.y
+
+            above_rect = self.rect.copy()
+            above_rect.y -= self.speed * 2
+            if any(above_rect.colliderect(obj.rect) for obj in objects):
+                self.rect.y += self.speed * 2
+            else:
+                current_time = pygame.time.get_ticks()
+                if current_time - self.last_random_time > self.random_direction_duration:
+                    rand_x = random.uniform(-1, 1)
+                    rand_y = random.choice([-1, 1])
+                    self.random_explore_dir = pgmath.Vector2(rand_x, rand_y).normalize()
+                    self.last_random_time = current_time
+
+                self.rect.x += self.random_explore_dir.x * self.speed
+                self.rect.y += self.random_explore_dir.y * self.speed
 
         else:
             if not background_is_moving:
                 self.rect.y -= self.speed
+
+        if self.rect.left < min_x:
+            self.rect.left = min_x
+        if self.rect.right > max_x:
+            self.rect.right = max_x
 
     def avoid_obstacles(self, obstacles):
 
@@ -152,19 +150,6 @@ class BotEspermanauta(Player):
                     self.rect.y += self.speed * 10
         else:
             self.rect.x += self.speed * self.direction
-        #self.weapon_active = True
-        #for enemy in enemies:
-        #    if abs(enemy.rect.centery - self.rect.centery) < 30:
-        #        distance = enemy.rect.centerx - self.rect.centerx
-
-        #        if abs(distance) < 300:
-        #            current_time = pygame.time.get_ticks()
-        #            if current_time - self.last_shot >= self.shoot_cooldown:
-        #                bullet = Bullet(self.rect.centerx, self.rect.top)
-        #                self.bullets.add(bullet)
-        #                level.all_sprites.add(bullet)
-        #                self.last_shot = current_time
-        #self.weapon_active = False
     
     def take_damage(self, damage):
         self.health -= damage
