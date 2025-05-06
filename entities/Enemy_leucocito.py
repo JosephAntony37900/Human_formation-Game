@@ -42,9 +42,22 @@ class EnemyLeucocito(pygame.sprite.Sprite):
             print(f"Error cargando frames del leucocito: {e}")
             return [pygame.image.load("assets/enemies/leucocito/leucocito1.png").convert_alpha()]
 
-    def update(self):
+    def update(self, player, bots):
         # movimiento del enemigo (caida)
-        self.rect.y += self.speed
+        targets = [player] + list(bots)
+
+        closets_target = min(
+            targets,
+            key = lambda t: (t.rect.centerx - self.rect.centerx) ** 2 + (t.rect.centery - self.rect.centery) ** 2
+        )
+        
+        dx = closets_target.rect.centerx - self.rect.centerx
+        dy = closets_target.rect.centery - self.rect.centery
+
+        distance = max(1, (dx ** 2 + dy ** 2) ** 0.5)
+
+        self.rect.x += int(self.speed * dx / distance)
+        self.rect.y += int(self.speed * dy / distance)
         
         # animacion de los frames
         if len(self.frames) > 1:

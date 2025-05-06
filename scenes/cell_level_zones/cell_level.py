@@ -7,6 +7,7 @@ from entities.Enemy_leucocito import EnemyLeucocito
 from entities.Bullet import Bullet
 from inputs.keyboard import get_keys
 from .zones.gas_Zone import GasZone
+from entities.Bot_Espermanauta import BotEspermanauta
 
 import random
 
@@ -22,6 +23,11 @@ class CellLevel:
         self.player.rect.center = (self.screen.get_width() // 2, self.screen.get_height() // 2 + 200)
         self.all_sprites = pygame.sprite.Group()
         self.all_sprites.add(self.player)
+        self.bots = pygame.sprite.Group()
+        self.bot1 = BotEspermanauta(500, 800)
+        self.bot2 = BotEspermanauta(600, 800)
+        self.bots.add(self.bot1, self.bot2)
+        self.all_sprites.add(self.bots)
         self.player_lives = 100.0
         self.max_lives = 100.0
         self.health_bar_width = 200
@@ -100,7 +106,9 @@ class CellLevel:
         if not self.game_over:
             keys = get_keys()
             if not self.game_paused:
-                self.player.update(keys, self.min_allowed_x, self.max_allowed_x, 300, self.max_allowed_y, self)
+                background_is_moving = self.player.update(keys, self.min_allowed_x, self.max_allowed_x, 300, self.max_allowed_y, self)
+                for bot in self.bots:
+                    bot.update(self.min_allowed_x + 300, self.max_allowed_x - 300, 300, self.max_allowed_y, self, self.enemies, self.obstacles, background_is_moving)
                 self.player.bullets.update()
 
                 self.update_obstacles()
@@ -200,6 +208,15 @@ class CellLevel:
                     self.kill_count += len(hits)
                     print(f"Leucocitos eliminados: {self.kill_count}")
                     bullet.kill()
+            for bot in self.bots:
+                hits = pygame.sprite.spritecollide(bot, self.obstacles, False)
+                if hits:
+                    bot.take_damage(15.0)
+
+            for bot in self.bots:
+                hits = pygame.sprite.spritecollide(bot, self.enemies, False)
+                if hits:
+                    bot.take_damage(25.0)
 
     def draw(self):
         if self.background:
