@@ -24,9 +24,18 @@ class CellLevel:
         self.all_sprites = pygame.sprite.Group()
         self.all_sprites.add(self.player)
         self.bots = pygame.sprite.Group()
-        self.bot1 = BotEspermanauta(500, 800)
-        self.bot2 = BotEspermanauta(600, 800)
-        self.bots.add(self.bot1, self.bot2)
+        self.bots.add(
+            BotEspermanauta(500, 800), 
+            BotEspermanauta(600, 800), 
+            BotEspermanauta(700, 800), 
+            BotEspermanauta(800, 800),
+            BotEspermanauta(900, 800),
+            BotEspermanauta(1000, 800),
+            BotEspermanauta(1100, 800),
+            BotEspermanauta(1200, 800),
+            BotEspermanauta(1300, 800),
+            BotEspermanauta(1400, 800)
+        )
         self.all_sprites.add(self.bots)
         self.player_lives = 100.0
         self.max_lives = 100.0
