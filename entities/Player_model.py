@@ -53,6 +53,7 @@ class Player(pygame.sprite.Sprite):
         screen_width = pygame.display.Info().current_w
         middle_third_start = screen_width // 8
         middle_third_end = (screen_width * 7) // 8
+        background_is_moving = False
 
         restricted_min_x = middle_third_start
         restricted_max_x = middle_third_end - self.rect.width
@@ -75,6 +76,7 @@ class Player(pygame.sprite.Sprite):
             if self.rect.top > min_allowed_y:
                 self.rect.y -= self.speed
             else:
+                background_is_moving = True
                 level.background_y += self.speed * 0.5
                 if self.rect.y < level.min_allowed_y:
                     level.min_allowed_y = self.rect.y
@@ -139,6 +141,7 @@ class Player(pygame.sprite.Sprite):
                 self.image = self.image.convert_alpha()
                 self.image.set_colorkey((0, 0, 0))
                 self.last_update = current_time
+        return background_is_moving
 
     def take_damage(self, damage):
         if not self.invincible:
