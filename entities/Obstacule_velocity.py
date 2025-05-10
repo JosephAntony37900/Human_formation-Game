@@ -14,15 +14,8 @@ class ObstaculeVelocity(pygame.sprite.Sprite):
         self.direction = direction
         
         self.current_frame = 0
-        self.image = pygame.transform.scale(self.frames[self.current_frame], (120, 120))
-
-        if self.direction == "LEFT":
-            self.image = pygame.transform.flip(self.image, True, False)
-        elif self.direction == "RIGHT":
-            self.image = pygame.transform.flip(self.image, True, True)
-        elif self.direction == "DOWN":
-            self.image = pygame.transform.flip(self.image, False, True)
-        
+        self.image = pygame.transform.scale(self.frames[self.current_frame], (200, 200))
+        self.image = self.rotate_sprite(self.image, self.direction)
         self.image = self.image.convert_alpha()
 
         background_color = (255, 255, 255)
@@ -56,9 +49,12 @@ class ObstaculeVelocity(pygame.sprite.Sprite):
             current_time = pygame.time.get_ticks()
             if current_time - self.last_update >= self.frame_rate:
                 self.current_frame = (self.current_frame + 1) % len(self.frames)
-                self.image = pygame.transform.scale(self.frames[self.current_frame], (80, 80))
-                self.image = self.image.convert_alpha()
-                self.image.set_colorkey((255, 255, 255))  
+
+                frame = pygame.transform.scale(self.frames[self.current_frame], (200, 200))
+                frame = self.rotate_sprite(frame, self.direction)
+                frame.set_colorkey((255, 255, 255))
+                self.image = frame
+
                 self.last_update = current_time
                 print(f"Frame actual del obstáculo: {self.current_frame}")
     
@@ -72,3 +68,14 @@ class ObstaculeVelocity(pygame.sprite.Sprite):
         elif self.direction == "DOWN":
             rect_obj.y += self.boost
         return rect_obj
+    
+    def rotate_sprite(self, image, direction):
+        if direction == "UP":
+            return image
+        elif direction == "RIGHT":
+            return pygame.transform.rotate(image, -90)
+        elif direction == "DOWN":
+            return pygame.transform.rotate(image, 180)
+        elif direction == "LEFT":
+            return pygame.transform.rotate(image, 90)
+        return image
