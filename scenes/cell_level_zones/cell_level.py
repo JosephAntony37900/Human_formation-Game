@@ -9,6 +9,7 @@ from entities.Bullet import Bullet
 from inputs.keyboard import get_keys
 from .zones.gas_Zone import GasZone
 from entities.Bot_Espermanauta import BotEspermanauta
+from .zones.moco_zone import MocoZone
 
 import random
 
@@ -67,7 +68,7 @@ class CellLevel:
         self.enemies = pygame.sprite.Group()
 
         self.gas_zone = GasZone(self.screen, self.all_sprites)
-
+        self.moco_zone = MocoZone(self.screen, self.all_sprites)# Zona de mocos
         self.start_time = pygame.time.get_ticks()
         self.spawn_enabled = False
         self.spawn_background_y_threshold = 100
@@ -84,7 +85,7 @@ class CellLevel:
 
         self.background_y = 0
         self.background_speed = 2
-
+        self.original_background_speed = self.background_speed  
         self.texts = ["¡Prepárate para la batalla!", "¡El enemigo se acerca!", "¡Lucha valientemente, soldado!"]
         self.current_text_index = 0
         self.max_texts = len(self.texts) - 1
@@ -132,11 +133,11 @@ class CellLevel:
                 self.update_obstacles()
                 self.update_enemies()
                 self.gas_zone.update_gases()
-
-                self.background_y += self.background_speed
-
                 player_x = self.player.rect.centerx
                 player_y = self.player.rect.centery
+                self.moco_zone.spawn_mocos(self.background_y, player_x, player_y, self.min_allowed_y, self.max_allowed_y)
+                self.moco_zone.update_mocos(self.player)
+                self.background_y += self.background_speed
                 self.gas_zone.spawn_gases(self.background_y, player_x, player_y, self.min_allowed_y, self.max_allowed_y)
 
                 if self.zone == "gas" and self.gases_avoided >= 20:
@@ -166,28 +167,6 @@ class CellLevel:
             self.narrator.update_speaking()
             self.apply_velocity_boosts()
 
-    def handle_enemy_spawning(self):
-        current_time = pygame.time.get_ticks()
-
-        if current_time - self.start_time < 3000:
-            return
-
-        if not self.spawn_enabled and self.background_y >= self.spawn_background_y_threshold:
-            self.spawn_enabled = True
-
-        if self.spawn_enabled and current_time - self.last_enemy_spawn_time >= self.enemy_spawn_interval:
-            if len(self.enemies) < 8:
-                middle_third_start = self.screen.get_width() // 3
-                middle_third_end = (self.screen.get_width() * 2) // 3
-                middle_third_width = middle_third_end - middle_third_start
-
-                enemy = EnemyLeucocito()
-                enemy.rect.x = middle_third_start + random.randint(0, middle_third_width - enemy.rect.width)
-                self.all_sprites.add(enemy)
-                self.enemies.add(enemy)
-
-            self.last_enemy_spawn_time = current_time
-
     def update_obstacles(self):
         for gas in self.obstacles:
             gas.update()
@@ -201,7 +180,6 @@ class CellLevel:
             if boost.rect.y > self.screen.get_height():
                 boost.kill()
 
-
     def update_enemies(self):
         for enemy in self.enemies:
             enemy.update()
@@ -210,6 +188,10 @@ class CellLevel:
 
     def check_collisions(self):
         if not self.game_paused and not self.game_over:
+            for moco in self.moco_zone.mocos:
+                if self.player.rect.colliderect(moco.rect):
+                   self.player.slow_down(self) 
+
             hits = pygame.sprite.spritecollide(self.player, self.obstacles, False)
             if hits:
                 if self.player.take_damage(15.0):
@@ -275,9 +257,8 @@ class CellLevel:
             game_over_text = self.game_over_font.render("¡Juego Terminado!", True, (255, 0, 0))
             self.screen.blit(game_over_text, (self.screen.get_width() // 2 - game_over_text.get_width() // 2, self.screen.get_height() // 2))
 
-
         pygame.display.update()
-    
+
     def apply_velocity_boosts(self):
         for boost in self.boosts:
             if self.player.rect.colliderect(boost.rect):
@@ -287,3 +268,13 @@ class CellLevel:
             for boost in self.boosts:
                 if bot.rect.colliderect(boost.rect):
                     bot.rect = boost.impulse(bot.rect)
+
+    def apply_moco_slowdown(self):
+        for moco in self.moco_zone.mocos:
+            if self.player.rect.colliderect(moco.rect):
+                self.player.slow_down(self)
+
+        for bot in self.bots:
+            for moco in self.moco_zone.mocos:
+                if bot.rect.colliderect(moco.rect):
+                    bot.slow_down()
