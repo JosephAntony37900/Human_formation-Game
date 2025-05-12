@@ -3,7 +3,7 @@ import random
 import os
 
 class Obstacle(pygame.sprite.Sprite):
-    def __init__(self):
+    def __init__(self, x, y):
         super().__init__()
 
         self.frames = self.load_frames("assets/obstacles/gas/")
@@ -21,14 +21,13 @@ class Obstacle(pygame.sprite.Sprite):
         print(f"Color clave para transparencia: {background_color}")
         
         self.rect = self.image.get_rect()
-        self.rect.x = random.randint(100, pygame.display.Info().current_w - 100)
-        self.rect.y = -50
+        self.rect.x = x
+        self.rect.y = y
         self.speed = 5  
         self.last_update = pygame.time.get_ticks()
         self.frame_rate = 150  
 
     def load_frames(self, folder_path):
-        """Carga todas las imágenes de una carpeta como frames."""
         frames = []
         try:
             for filename in sorted(os.listdir(folder_path)):  
