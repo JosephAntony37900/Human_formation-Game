@@ -5,6 +5,7 @@ from entities.Narrador_model import Narrator
 from entities.Obstacule_gas import Obstacle
 from entities.Obstacule_velocity import ObstaculeVelocity
 from entities.Enemy_leucocito import EnemyLeucocito
+from .zones.lactobacilo_Zone import LactobaciloZone
 from entities.Bullet import Bullet
 from inputs.keyboard import get_keys
 from .zones.gas_Zone import GasZone
@@ -55,6 +56,9 @@ class CellLevel:
         self.health_bar_y = 10
         self.health_font = pygame.font.Font(None, 24)
         self.kill_count = 0
+        self.enemies = pygame.sprite.Group()
+        self.spittle_group = pygame.sprite.Group()
+
 
         try:
             self.kill_font = pygame.font.Font("assets/Pixelify_Sans/pixelfont.ttf", 25)
@@ -69,6 +73,7 @@ class CellLevel:
 
         self.gas_zone = GasZone(self.screen, self.all_sprites)
         self.moco_zone = MocoZone(self.screen, self.all_sprites)# Zona de mocos
+        self.lactobacilo_zone = LactobaciloZone(self.screen, self.all_sprites, self.enemies, self.spittle_group)
         self.start_time = pygame.time.get_ticks()
         self.spawn_enabled = False
         self.spawn_background_y_threshold = 100
@@ -141,11 +146,18 @@ class CellLevel:
                 self.gas_zone.spawn_gases(self.background_y, player_x, player_y, self.min_allowed_y, self.max_allowed_y)
 
                 if self.zone == "gas" and self.gases_avoided >= 20:
-                    self.zone = "leucocito"
-                    print("¡Has pasado a la zona de leucocitos!")
+                  self.zone = "leucocito"
+                  print("¡Has pasado a la zona de leucocitos!")
 
-                if self.zone == "leucocito":
-                    self.handle_enemy_spawning()
+                elif self.zone == "leucocito":
+                     self.handle_enemy_spawning()
+                     if self.kill_count >= 20:
+                        self.zone = "lactobacilo"
+                        print("¡Has llegado a la zona de lactobacilos!")
+
+                elif self.zone == "lactobacilo":
+                    self.lactobacilo_zone.update_lactobacilos(self.background_y)
+
 
             current_time = pygame.time.get_ticks()
             if self.current_text_index <= self.max_texts:
