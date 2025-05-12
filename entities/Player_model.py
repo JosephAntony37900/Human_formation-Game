@@ -27,7 +27,10 @@ class Player(pygame.sprite.Sprite):
         self.invincible = False
         self.invincibility_timer = 0
         self.invincibility_duration = 1000
-
+        self.original_speed = self.speed
+        self.slowed = False
+        self.slow_timer = 0
+        self.slow_duration = 3000
         self.shooting = False
         self.shoot_frame_index = 0
         self.shoot_animation_timer = 0
@@ -77,7 +80,8 @@ class Player(pygame.sprite.Sprite):
                 self.rect.y -= self.speed
             else:
                 background_is_moving = True
-                level.background_y += self.speed * 0.5
+                level.background_y += 4
+                self.rect.y -= self.speed
                 if self.rect.y < level.min_allowed_y:
                     level.min_allowed_y = self.rect.y
             if self.rect.top < min_allowed_y:
@@ -141,6 +145,8 @@ class Player(pygame.sprite.Sprite):
                 self.image = self.image.convert_alpha()
                 self.image.set_colorkey((0, 0, 0))
                 self.last_update = current_time
+        
+        self.check_slow_status(level)
         return background_is_moving
 
     def take_damage(self, damage):
@@ -164,3 +170,19 @@ class Player(pygame.sprite.Sprite):
         self.invincibility_timer = 0
         self.bullets.empty()
         self.shooting = False
+
+    def slow_down(self, level):
+        if not self.slowed:
+            self.speed = 1
+            self.rect.y -= self.speed
+            level.background_speed = 1
+            self.slowed = True
+            self.slow_timer = pygame.time.get_ticks()
+            
+    def check_slow_status(self, level):
+        if self.slowed:
+           current_time = pygame.time.get_ticks()
+           if current_time - self.slow_timer >= 2000:  # 2000 ms (2 segundos) en lo q regresa a la normalidad
+              self.speed = self.original_speed 
+              level.background_speed = level.original_background_speed
+              self.slowed = False 
