@@ -141,7 +141,7 @@ class CellLevel:
                 player_x = self.player.rect.centerx
                 player_y = self.player.rect.centery
                 self.moco_zone.spawn_mocos(self.background_y, player_x, player_y, self.min_allowed_y, self.max_allowed_y)
-                self.moco_zone.update_mocos(self.player)
+                self.moco_zone.update_mocos(self.player, self.bots)
                 self.background_y += self.background_speed
                 self.gas_zone.spawn_gases(self.background_y, player_x, player_y, self.min_allowed_y, self.max_allowed_y)
 
