@@ -32,6 +32,7 @@ class BotEspermanauta(Player):
         if self.slowed and current_time - self.slow_timer >= self.slow_duration:
             self.slowed = False
             self.speed = self.original_speed
+            level.background_speed = level.original_background_speed
 
 
     def handle_animation_and_status(self):
@@ -99,7 +100,10 @@ class BotEspermanauta(Player):
 
         else:
             if not background_is_moving:
-                self.rect.y -= self.speed
+                if self.slowed:
+                    self.rect.y += self.speed
+                else:
+                    self.rect.y -= self.speed
 
         if self.rect.left < min_x:
             self.rect.left = min_x
@@ -166,8 +170,9 @@ class BotEspermanauta(Player):
         if self.health <= 0:
             self.kill()
     
-    def apply_slow(self):
+    def slow_down(self, level, background_is_moving):
         if not self.slowed:
+            self.rect.y -= self.speed
+            level.background_speed = 1
             self.slowed = True
-            self.speed *= 0.5
             self.slow_timer = pygame.time.get_ticks()

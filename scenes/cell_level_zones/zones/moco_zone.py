@@ -24,11 +24,11 @@ class MocoZone:
         self.all_sprites.add(moco)
         self.mocos.add(moco)
 
-    def update_mocos(self, player, bots):
+    def update_mocos(self, player, bots, background_is_moving):
         for moco in self.mocos:
             moco.update()
             self.check_collision_with_player(moco, player)
-            self.check_collision_with_bot(moco, bots)
+            self.check_collision_with_bot(moco, bots, background_is_moving)
             if moco.rect.top > self.screen.get_height() + 100:
                 moco.kill()
 
@@ -36,7 +36,7 @@ class MocoZone:
         if moco.rect.colliderect(player.rect):
             player.slow_down(self)
     
-    def check_collision_with_bot(self, moco, bots):
+    def check_collision_with_bot(self, moco, bots, background_is_moving):
         for bot in bots:
             if moco.rect.colliderect(bot.rect):
-                bot.apply_slow()
+                bot.slow_down(self, background_is_moving)

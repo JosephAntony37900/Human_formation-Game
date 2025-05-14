@@ -186,3 +186,13 @@ class Player(pygame.sprite.Sprite):
               self.speed = self.original_speed 
               level.background_speed = level.original_background_speed
               self.slowed = False 
+    
+    def get_slowed(self):
+        if not self.slowed:
+            self.slowed = True
+            self.speed *= 0.5
+
+    def remove_slowed(self):
+        if self.slowed:
+            self.slowed = False
+            self.speed *= 2
