@@ -18,12 +18,22 @@ class GasZone:
         self.start_time = pygame.time.get_ticks()
         self.music_start_time = pygame.time.get_ticks()
         self.music_started = False
+        self.last_gas_time = pygame.time.get_ticks()
+        self.gas_cooldown = 1000
 
     def spawn_gases_function(self, level):
-        if random.random() < 0.2:
-            gas = Obstacle(0, random.random())
-            level.obstacles.add(gas)
-            level.all_sprites.add(level.obstacles)
+         now = pygame.time.get_ticks()
+         if now - self.last_gas_time > self.gas_cooldown:
+             if random.random() < 0.1:
+                self.last_gas_time = now
+                screen_width = self.screen.get_width()
+
+                x = random.randint(50, screen_width - 50)
+                y = -50
+
+                gas = Obstacle(x, y)
+                level.obstacles.add(gas)
+                level.all_sprites.add(gas)
 
     def spawn_gases(self, background_y, player_x, player_y, min_allowed_y, max_allowed_y):
         current_time = pygame.time.get_ticks()

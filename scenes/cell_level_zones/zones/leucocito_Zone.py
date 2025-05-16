@@ -10,6 +10,22 @@ class LeucocitoZone:
         self.spawn_enabled = False
         self.start_time = pygame.time.get_ticks()
         self.background_y_threshold = 100  # Puedes ajustar esto
+        self.last_enemy_time = pygame.time.get_ticks()
+        self.enemy_coldown = 1000
+    
+    def spawn_enemy(self, level):
+        now = pygame.time.get_ticks
+        if now - self.last_enemy_time > self.enemy_coldown:
+            if random.random() < 0.1:
+                self.last_enemy_time = now
+                screen_width = self.screen.get_width()
+
+                x = random.randint(50, screen_width - 50)
+                y = -50
+
+                enemy = EnemyLeucocito(x, y)
+                level.enemies.add(enemy)
+                level.all_sprites.add(enemy)
 
     def update(self, background_y):
         current_time = pygame.time.get_ticks()

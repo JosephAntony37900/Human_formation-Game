@@ -6,9 +6,11 @@ from entities.Obstacule_gas import Obstacle
 from entities.Obstacule_velocity import ObstaculeVelocity
 from entities.Enemy_leucocito import EnemyLeucocito
 from .zones.lactobacilo_Zone import LactobaciloZone
+from .zones.leucocito_Zone import LeucocitoZone
 from entities.Bullet import Bullet
 from inputs.keyboard import get_keys
 from .zones.gas_Zone import GasZone
+from .zones.waves_Zone import WavesZone
 from entities.Bot_Espermanauta import BotEspermanauta
 from .zones.moco_zone import MocoZone
 
@@ -41,12 +43,6 @@ class CellLevel:
         )
         self.all_sprites.add(self.bots)
         self.boosts = pygame.sprite.Group()
-        self.boosts.add(
-            ObstaculeVelocity(500, 100, "UP"),
-            ObstaculeVelocity(700, 100, "LEFT"),
-            ObstaculeVelocity(900, 100, "RIGHT"),
-            ObstaculeVelocity(1100, 100, "DOWN")
-        )
         self.all_sprites.add(self.boosts)
         self.player_lives = 100.0
         self.max_lives = 100.0
@@ -75,6 +71,8 @@ class CellLevel:
 
         self.gas_zone = GasZone(self.screen, self.all_sprites)
         self.moco_zone = MocoZone(self.screen, self.all_sprites)# Zona de mocos
+        self.wave_zone = WavesZone(self.screen, self.all_sprites)
+        self.leucocito_zone = LeucocitoZone(self.screen, self.all_sprites, self.enemies)
         self.lactobacilo_zone = LactobaciloZone(self.screen, self.all_sprites, self.enemies, self.spittle_group)
         self.start_time = pygame.time.get_ticks()
         self.spawn_enabled = False
@@ -153,12 +151,13 @@ class CellLevel:
                     self.gas_zone.spawn_gases_function(self)
                 elif self.time_to_change_zone >= 50000 and self.time_to_change_zone <= 110000: # 50 seg
                     self.zone_name = "RAMPAS"
+                    self.wave_zone.spawn_waves(self)
                 elif self.time_to_change_zone >= 110000 and self.time_to_change_zone <= 140000: # 110 seg
                     self.zone_name = "MOCOS"
                     self.moco_zone.spawn_mocos(self.background_y, player_x, player_y, self.min_allowed_y, self.max_allowed_y)
                 elif self.time_to_change_zone >= 140000 and self.time_to_change_zone <= 200000: # 140 seg
                     self.zone_name = "ENEMIGOS"
-                    # self.lactobacilo_zone
+                    self.leucocito_zone.spawn_enemy(self)
                 elif self.time_to_change_zone >= 200000: # 200 seg
                     self.zone_name = "PRINCESS"
                 
@@ -166,11 +165,11 @@ class CellLevel:
                   self.zone = "leucocito"
                   print("¡Has pasado a la zona de leucocitos!")
 
-                elif self.zone == "leucocito":
-                     self.handle_enemy_spawning()
-                     if self.kill_count >= 20:
-                        self.zone = "lactobacilo"
-                        print("¡Has llegado a la zona de lactobacilos!")
+                # elif self.zone == "leucocito":
+                #      self.handle_enemy_spawning()
+                #      if self.kill_count >= 20:
+                #         self.zone = "lactobacilo"
+                #         print("¡Has llegado a la zona de lactobacilos!")
 
                 elif self.zone == "lactobacilo":
                     self.lactobacilo_zone.update_lactobacilos(self.background_y)
