@@ -58,6 +58,8 @@ class CellLevel:
         self.kill_count = 0
         self.enemies = pygame.sprite.Group()
         self.spittle_group = pygame.sprite.Group()
+        self.time_to_change_zone = pygame.time.get_ticks()
+        self.zone_name = ""
 
 
         try:
@@ -130,6 +132,7 @@ class CellLevel:
         if not self.game_over:
             keys = get_keys()
             if not self.game_paused:
+                self.time_to_change_zone = pygame.time.get_ticks() - self.start_time
                 background_is_moving = self.player.update(keys, self.min_allowed_x, self.max_allowed_x, 300, self.max_allowed_y, self)
                 for bot in self.bots:
                     bot.update(self.min_allowed_x + 300, self.max_allowed_x - 300, 300, self.max_allowed_y, self, self.enemies, list(self.obstacles) + list(self.boosts), background_is_moving)
@@ -140,11 +143,25 @@ class CellLevel:
                 self.gas_zone.update_gases()
                 player_x = self.player.rect.centerx
                 player_y = self.player.rect.centery
-                self.moco_zone.spawn_mocos(self.background_y, player_x, player_y, self.min_allowed_y, self.max_allowed_y)
+                
                 self.moco_zone.update_mocos(self.player, self.bots, background_is_moving)
                 self.background_y += self.background_speed
-                self.gas_zone.spawn_gases(self.background_y, player_x, player_y, self.min_allowed_y, self.max_allowed_y)
 
+                if self.time_to_change_zone >= 10000 and self.time_to_change_zone <= 50000: # 10 seg
+                    self.zone_name = "GAS"
+                    # self.gas_zone.spawn_gases(self.background_y, player_x, player_y, self.min_allowed_y, self.max_allowed_y)
+                    self.gas_zone.spawn_gases_function(self)
+                elif self.time_to_change_zone >= 50000 and self.time_to_change_zone <= 110000: # 50 seg
+                    self.zone_name = "RAMPAS"
+                elif self.time_to_change_zone >= 110000 and self.time_to_change_zone <= 140000: # 110 seg
+                    self.zone_name = "MOCOS"
+                    self.moco_zone.spawn_mocos(self.background_y, player_x, player_y, self.min_allowed_y, self.max_allowed_y)
+                elif self.time_to_change_zone >= 140000 and self.time_to_change_zone <= 200000: # 140 seg
+                    self.zone_name = "ENEMIGOS"
+                    # self.lactobacilo_zone
+                elif self.time_to_change_zone >= 200000: # 200 seg
+                    self.zone_name = "PRINCESS"
+                
                 if self.zone == "gas" and self.gases_avoided >= 20:
                   self.zone = "leucocito"
                   print("¡Has pasado a la zona de leucocitos!")
