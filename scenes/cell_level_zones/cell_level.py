@@ -210,7 +210,7 @@ class CellLevel:
 
     def update_enemies(self):
         for enemy in self.enemies:
-            enemy.update()
+            enemy.update(self.player, self.bots)
             if enemy.rect.y > self.screen.get_height():
                 enemy.kill()
 

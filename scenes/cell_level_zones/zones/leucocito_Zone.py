@@ -14,7 +14,7 @@ class LeucocitoZone:
         self.enemy_coldown = 1000
     
     def spawn_enemy(self, level):
-        now = pygame.time.get_ticks
+        now = pygame.time.get_ticks()
         if now - self.last_enemy_time > self.enemy_coldown:
             if random.random() < 0.1:
                 self.last_enemy_time = now
@@ -23,7 +23,7 @@ class LeucocitoZone:
                 x = random.randint(50, screen_width - 50)
                 y = -50
 
-                enemy = EnemyLeucocito(x, y)
+                enemy = EnemyLeucocito()
                 level.enemies.add(enemy)
                 level.all_sprites.add(enemy)
 
