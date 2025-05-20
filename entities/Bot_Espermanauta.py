@@ -17,12 +17,23 @@ class BotEspermanauta(Player):
         self.random_explore_dir = pgmath.Vector2(0, 0)
         self.last_random_time = pygame.time.get_ticks()
         self.random_direction_duration = 1500
+        self.slowed = False
+        self.slow_timer = 0
+        self.slow_duration = 2000  # milisegundos
+        self.original_speed = self.speed
 
     def update(self, min_x, max_x, min_y, max_y, level, enemies, obstacles, background_is_moving):
        
         self.detect_and_evade(list(obstacles) + list(enemies), background_is_moving, min_x, max_x)
 
         self.handle_animation_and_status()
+
+        current_time = pygame.time.get_ticks()
+        if self.slowed and current_time - self.slow_timer >= self.slow_duration:
+            self.slowed = False
+            self.speed = self.original_speed
+            level.background_speed = level.original_background_speed
+
 
     def handle_animation_and_status(self):
         current_time = pygame.time.get_ticks()
@@ -89,7 +100,10 @@ class BotEspermanauta(Player):
 
         else:
             if not background_is_moving:
-                self.rect.y -= self.speed
+                if self.slowed:
+                    self.rect.y += self.speed
+                else:
+                    self.rect.y -= self.speed
 
         if self.rect.left < min_x:
             self.rect.left = min_x
@@ -155,3 +169,10 @@ class BotEspermanauta(Player):
         self.health -= damage
         if self.health <= 0:
             self.kill()
+    
+    def slow_down(self, level, background_is_moving):
+        if not self.slowed:
+            self.rect.y -= self.speed
+            level.background_speed = 1
+            self.slowed = True
+            self.slow_timer = pygame.time.get_ticks()

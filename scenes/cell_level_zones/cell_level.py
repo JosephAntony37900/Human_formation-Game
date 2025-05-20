@@ -5,10 +5,15 @@ from entities.Narrador_model import Narrator
 from entities.Obstacule_gas import Obstacle
 from entities.Obstacule_velocity import ObstaculeVelocity
 from entities.Enemy_leucocito import EnemyLeucocito
+from .zones.lactobacilo_Zone import LactobaciloZone
+from .zones.leucocito_Zone import LeucocitoZone
 from entities.Bullet import Bullet
 from inputs.keyboard import get_keys
 from .zones.gas_Zone import GasZone
+from .zones.waves_Zone import WavesZone
 from entities.Bot_Espermanauta import BotEspermanauta
+from entities.Entity_princess import PrincessMononoke
+from .zones.moco_zone import MocoZone
 
 import random
 
@@ -39,12 +44,6 @@ class CellLevel:
         )
         self.all_sprites.add(self.bots)
         self.boosts = pygame.sprite.Group()
-        self.boosts.add(
-            ObstaculeVelocity(500, 100, "UP"),
-            ObstaculeVelocity(700, 100, "LEFT"),
-            ObstaculeVelocity(900, 100, "RIGHT"),
-            ObstaculeVelocity(1100, 100, "DOWN")
-        )
         self.all_sprites.add(self.boosts)
         self.player_lives = 100.0
         self.max_lives = 100.0
@@ -54,6 +53,11 @@ class CellLevel:
         self.health_bar_y = 10
         self.health_font = pygame.font.Font(None, 24)
         self.kill_count = 0
+        self.enemies = pygame.sprite.Group()
+        self.spittle_group = pygame.sprite.Group()
+        self.time_to_change_zone = pygame.time.get_ticks()
+        self.zone_name = ""
+
 
         try:
             self.kill_font = pygame.font.Font("assets/Pixelify_Sans/pixelfont.ttf", 25)
@@ -67,7 +71,10 @@ class CellLevel:
         self.enemies = pygame.sprite.Group()
 
         self.gas_zone = GasZone(self.screen, self.all_sprites)
-
+        self.moco_zone = MocoZone(self.screen, self.all_sprites)# Zona de mocos
+        self.wave_zone = WavesZone(self.screen, self.all_sprites)
+        self.leucocito_zone = LeucocitoZone(self.screen, self.all_sprites, self.enemies)
+        self.lactobacilo_zone = LactobaciloZone(self.screen, self.all_sprites, self.enemies, self.spittle_group)
         self.start_time = pygame.time.get_ticks()
         self.spawn_enabled = False
         self.spawn_background_y_threshold = 100
@@ -84,7 +91,7 @@ class CellLevel:
 
         self.background_y = 0
         self.background_speed = 2
-
+        self.original_background_speed = self.background_speed  
         self.texts = ["¡Prepárate para la batalla!", "¡El enemigo se acerca!", "¡Lucha valientemente, soldado!"]
         self.current_text_index = 0
         self.max_texts = len(self.texts) - 1
@@ -104,6 +111,10 @@ class CellLevel:
         self.zone = "gas"
         self.last_enemy_spawn_time = pygame.time.get_ticks()
         self.enemy_spawn_interval = 2000
+        self.music_start_time = pygame.time.get_ticks()
+        self.music_started = False
+        self.princess_spawned = False
+        self.princess
 
     def run(self):
         while self.running:
@@ -124,6 +135,8 @@ class CellLevel:
         if not self.game_over:
             keys = get_keys()
             if not self.game_paused:
+                music_current_time = pygame.time.get_ticks()
+                self.time_to_change_zone = pygame.time.get_ticks() - self.start_time
                 background_is_moving = self.player.update(keys, self.min_allowed_x, self.max_allowed_x, 300, self.max_allowed_y, self)
                 for bot in self.bots:
                     bot.update(self.min_allowed_x + 300, self.max_allowed_x - 300, 300, self.max_allowed_y, self, self.enemies, list(self.obstacles) + list(self.boosts), background_is_moving)
@@ -132,19 +145,49 @@ class CellLevel:
                 self.update_obstacles()
                 self.update_enemies()
                 self.gas_zone.update_gases()
-
-                self.background_y += self.background_speed
-
                 player_x = self.player.rect.centerx
                 player_y = self.player.rect.centery
-                self.gas_zone.spawn_gases(self.background_y, player_x, player_y, self.min_allowed_y, self.max_allowed_y)
+                
+                self.moco_zone.update_mocos(self.player, self.bots, background_is_moving)
+                self.background_y += self.background_speed
 
+                if self.time_to_change_zone >= 10000 and self.time_to_change_zone <= 50000: # 10 seg
+                    self.zone_name = "GAS"
+                    # self.gas_zone.spawn_gases(self.background_y, player_x, player_y, self.min_allowed_y, self.max_allowed_y)
+                    self.gas_zone.spawn_gases_function(self)
+                elif self.time_to_change_zone >= 50000 and self.time_to_change_zone <= 110000: # 50 seg
+                    self.zone_name = "RAMPAS"
+                    self.wave_zone.spawn_waves(self)
+                elif self.time_to_change_zone >= 110000 and self.time_to_change_zone <= 140000: # 110 seg
+                    self.zone_name = "MOCOS"
+                    self.moco_zone.spawn_mocos(self.background_y, player_x, player_y, self.min_allowed_y, self.max_allowed_y)
+                elif self.time_to_change_zone >= 140000 and self.time_to_change_zone <= 200000: # 140 seg
+                    self.zone_name = "ENEMIGOS"
+                    self.leucocito_zone.spawn_enemy(self)
+                    self.lactobacilo_zone.spawn_enemy(self)
+                elif self.time_to_change_zone >= 200000: # 200 seg
+                    self.zone_name = "PRINCESS"
+                    if not self.princess_spawned:
+                        self.princess = PrincessMononoke()
+                
                 if self.zone == "gas" and self.gases_avoided >= 20:
-                    self.zone = "leucocito"
-                    print("¡Has pasado a la zona de leucocitos!")
+                  self.zone = "leucocito"
+                  print("¡Has pasado a la zona de leucocitos!")
 
-                if self.zone == "leucocito":
-                    self.handle_enemy_spawning()
+                # elif self.zone == "leucocito":
+                #      self.handle_enemy_spawning()
+                #      if self.kill_count >= 20:
+                #         self.zone = "lactobacilo"
+                #         print("¡Has llegado a la zona de lactobacilos!")
+
+                elif self.zone == "lactobacilo":
+                    self.lactobacilo_zone.update_lactobacilos(self.background_y)
+                
+                if not self.music_started and music_current_time - self.music_start_time >= 15000:
+                    pygame.mixer.music.load("assets/music/Cosmicv1.mp3")
+                    pygame.mixer.music.play(-1)
+                    self.music_started = True
+
 
             current_time = pygame.time.get_ticks()
             if self.current_text_index <= self.max_texts:
@@ -166,28 +209,6 @@ class CellLevel:
             self.narrator.update_speaking()
             self.apply_velocity_boosts()
 
-    def handle_enemy_spawning(self):
-        current_time = pygame.time.get_ticks()
-
-        if current_time - self.start_time < 3000:
-            return
-
-        if not self.spawn_enabled and self.background_y >= self.spawn_background_y_threshold:
-            self.spawn_enabled = True
-
-        if self.spawn_enabled and current_time - self.last_enemy_spawn_time >= self.enemy_spawn_interval:
-            if len(self.enemies) < 8:
-                middle_third_start = self.screen.get_width() // 3
-                middle_third_end = (self.screen.get_width() * 2) // 3
-                middle_third_width = middle_third_end - middle_third_start
-
-                enemy = EnemyLeucocito()
-                enemy.rect.x = middle_third_start + random.randint(0, middle_third_width - enemy.rect.width)
-                self.all_sprites.add(enemy)
-                self.enemies.add(enemy)
-
-            self.last_enemy_spawn_time = current_time
-
     def update_obstacles(self):
         for gas in self.obstacles:
             gas.update()
@@ -201,15 +222,18 @@ class CellLevel:
             if boost.rect.y > self.screen.get_height():
                 boost.kill()
 
-
     def update_enemies(self):
         for enemy in self.enemies:
-            enemy.update()
+            enemy.update(self.player, self.bots)
             if enemy.rect.y > self.screen.get_height():
                 enemy.kill()
 
     def check_collisions(self):
         if not self.game_paused and not self.game_over:
+            for moco in self.moco_zone.mocos:
+                if self.player.rect.colliderect(moco.rect):
+                   self.player.slow_down(self) 
+
             hits = pygame.sprite.spritecollide(self.player, self.obstacles, False)
             if hits:
                 if self.player.take_damage(15.0):
@@ -225,6 +249,9 @@ class CellLevel:
                     print(f"Vida restante (tras tocar leucocito): {self.player_lives}%")
                     if self.player_lives <= 0:
                         self.game_over = True
+            if hits:
+                if self.player.rect.colliderect(self.princess):
+                    self.win_level() #Lógica de ganar el nivel
 
             for bullet in self.player.bullets:
                 hits = pygame.sprite.spritecollide(bullet, self.enemies, True)
@@ -241,6 +268,11 @@ class CellLevel:
                 hits = pygame.sprite.spritecollide(bot, self.enemies, False)
                 if hits:
                     bot.take_damage(25.0)
+            
+            for bot in self.bots:
+                hits = pygame.sprite.spritecollide(bot, self.princess, False)
+                if hits:
+                    pass # Agregar la lógica para perder
 
     def draw(self):
         if self.background:
@@ -275,9 +307,8 @@ class CellLevel:
             game_over_text = self.game_over_font.render("¡Juego Terminado!", True, (255, 0, 0))
             self.screen.blit(game_over_text, (self.screen.get_width() // 2 - game_over_text.get_width() // 2, self.screen.get_height() // 2))
 
-
         pygame.display.update()
-    
+
     def apply_velocity_boosts(self):
         for boost in self.boosts:
             if self.player.rect.colliderect(boost.rect):
@@ -287,3 +318,16 @@ class CellLevel:
             for boost in self.boosts:
                 if bot.rect.colliderect(boost.rect):
                     bot.rect = boost.impulse(bot.rect)
+
+    def apply_moco_slowdown(self):
+        for moco in self.moco_zone.mocos:
+            if self.player.rect.colliderect(moco.rect):
+                self.player.slow_down(self)
+
+        for bot in self.bots:
+            for moco in self.moco_zone.mocos:
+                if bot.rect.colliderect(moco.rect):
+                    bot.slow_down()
+
+    def win_level(self):
+        pass
