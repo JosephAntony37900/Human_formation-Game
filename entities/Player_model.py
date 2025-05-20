@@ -100,6 +100,8 @@ class Player(pygame.sprite.Sprite):
         current_time = pygame.time.get_ticks()
 
         if self.weapon_active and keys[pygame.K_SPACE] and (current_time - self.last_shot >= self.shoot_cooldown):
+            pygame.mixer.music.load("assets/music/shot_sound.mp3")
+            pygame.mixer.music.play(-1)
             bullet = Bullet(self.rect.centerx, self.rect.top)
             self.bullets.add(bullet)
             level.all_sprites.add(bullet)
