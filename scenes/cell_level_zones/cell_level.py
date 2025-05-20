@@ -3,6 +3,7 @@ from config.Display_settings import DisplaySettings
 from entities.Player_model import Player
 from entities.Narrador_model import Narrator
 from entities.Obstacule_gas import Obstacle
+from entities.Obstacule_velocity import ObstaculeVelocity
 from entities.Enemy_leucocito import EnemyLeucocito
 from entities.Bullet import Bullet
 from inputs.keyboard import get_keys
@@ -24,10 +25,27 @@ class CellLevel:
         self.all_sprites = pygame.sprite.Group()
         self.all_sprites.add(self.player)
         self.bots = pygame.sprite.Group()
-        self.bot1 = BotEspermanauta(500, 800)
-        self.bot2 = BotEspermanauta(600, 800)
-        self.bots.add(self.bot1, self.bot2)
+        self.bots.add(
+            BotEspermanauta(500, 800), 
+            BotEspermanauta(600, 800), 
+            BotEspermanauta(700, 800), 
+            BotEspermanauta(800, 800),
+            BotEspermanauta(900, 800),
+            BotEspermanauta(1000, 800),
+            BotEspermanauta(1100, 800),
+            BotEspermanauta(1200, 800),
+            BotEspermanauta(1300, 800),
+            BotEspermanauta(1400, 800)
+        )
         self.all_sprites.add(self.bots)
+        self.boosts = pygame.sprite.Group()
+        self.boosts.add(
+            ObstaculeVelocity(500, 100, "UP"),
+            ObstaculeVelocity(700, 100, "LEFT"),
+            ObstaculeVelocity(900, 100, "RIGHT"),
+            ObstaculeVelocity(1100, 100, "DOWN")
+        )
+        self.all_sprites.add(self.boosts)
         self.player_lives = 100.0
         self.max_lives = 100.0
         self.health_bar_width = 200
@@ -108,7 +126,7 @@ class CellLevel:
             if not self.game_paused:
                 background_is_moving = self.player.update(keys, self.min_allowed_x, self.max_allowed_x, 300, self.max_allowed_y, self)
                 for bot in self.bots:
-                    bot.update(self.min_allowed_x + 300, self.max_allowed_x - 300, 300, self.max_allowed_y, self, self.enemies, self.obstacles, background_is_moving)
+                    bot.update(self.min_allowed_x + 300, self.max_allowed_x - 300, 300, self.max_allowed_y, self, self.enemies, list(self.obstacles) + list(self.boosts), background_is_moving)
                 self.player.bullets.update()
 
                 self.update_obstacles()
@@ -146,6 +164,7 @@ class CellLevel:
                     self.game_paused = False
 
             self.narrator.update_speaking()
+            self.apply_velocity_boosts()
 
     def handle_enemy_spawning(self):
         current_time = pygame.time.get_ticks()
@@ -177,6 +196,11 @@ class CellLevel:
                 if self.zone == "gas":
                     self.gases_avoided += 1
                     print(f"Gases esquivados: {self.gases_avoided}/20")
+        for boost in self.boosts:
+            boost.update()
+            if boost.rect.y > self.screen.get_height():
+                boost.kill()
+
 
     def update_enemies(self):
         for enemy in self.enemies:
@@ -253,3 +277,13 @@ class CellLevel:
 
 
         pygame.display.update()
+    
+    def apply_velocity_boosts(self):
+        for boost in self.boosts:
+            if self.player.rect.colliderect(boost.rect):
+                self.player.rect = boost.impulse(self.player.rect)
+
+        for bot in self.bots:
+            for boost in self.boosts:
+                if bot.rect.colliderect(boost.rect):
+                    bot.rect = boost.impulse(bot.rect)
