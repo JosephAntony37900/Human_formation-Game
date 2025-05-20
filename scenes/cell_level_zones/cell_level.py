@@ -12,6 +12,7 @@ from inputs.keyboard import get_keys
 from .zones.gas_Zone import GasZone
 from .zones.waves_Zone import WavesZone
 from entities.Bot_Espermanauta import BotEspermanauta
+from entities.Entity_princess import PrincessMononoke
 from .zones.moco_zone import MocoZone
 
 import random
@@ -112,6 +113,8 @@ class CellLevel:
         self.enemy_spawn_interval = 2000
         self.music_start_time = pygame.time.get_ticks()
         self.music_started = False
+        self.princess_spawned = False
+        self.princess
 
     def run(self):
         while self.running:
@@ -164,6 +167,8 @@ class CellLevel:
                     self.lactobacilo_zone.spawn_enemy(self)
                 elif self.time_to_change_zone >= 200000: # 200 seg
                     self.zone_name = "PRINCESS"
+                    if not self.princess_spawned:
+                        self.princess = PrincessMononoke()
                 
                 if self.zone == "gas" and self.gases_avoided >= 20:
                   self.zone = "leucocito"
@@ -244,6 +249,9 @@ class CellLevel:
                     print(f"Vida restante (tras tocar leucocito): {self.player_lives}%")
                     if self.player_lives <= 0:
                         self.game_over = True
+            if hits:
+                if self.player.rect.colliderect(self.princess):
+                    self.win_level() #Lógica de ganar el nivel
 
             for bullet in self.player.bullets:
                 hits = pygame.sprite.spritecollide(bullet, self.enemies, True)
@@ -260,6 +268,11 @@ class CellLevel:
                 hits = pygame.sprite.spritecollide(bot, self.enemies, False)
                 if hits:
                     bot.take_damage(25.0)
+            
+            for bot in self.bots:
+                hits = pygame.sprite.spritecollide(bot, self.princess, False)
+                if hits:
+                    pass # Agregar la lógica para perder
 
     def draw(self):
         if self.background:
@@ -315,3 +328,6 @@ class CellLevel:
             for moco in self.moco_zone.mocos:
                 if bot.rect.colliderect(moco.rect):
                     bot.slow_down()
+
+    def win_level(self):
+        pass
