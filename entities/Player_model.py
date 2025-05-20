@@ -34,7 +34,9 @@ class Player(pygame.sprite.Sprite):
         self.shooting = False
         self.shoot_frame_index = 0
         self.shoot_animation_timer = 0
-        self.shoot_animation_speed = 40  
+        self.shoot_animation_speed = 40
+        self.shoot_sound = pygame.mixer.Sound("assets/music/shot_sound.mp3")
+
 
     def load_frames(self, folder_path):
         frames = []
@@ -100,8 +102,7 @@ class Player(pygame.sprite.Sprite):
         current_time = pygame.time.get_ticks()
 
         if self.weapon_active and keys[pygame.K_SPACE] and (current_time - self.last_shot >= self.shoot_cooldown):
-            pygame.mixer.music.load("assets/music/shot_sound.mp3")
-            pygame.mixer.music.play(-1)
+            self.shoot_sound.play()
             bullet = Bullet(self.rect.centerx, self.rect.top)
             self.bullets.add(bullet)
             level.all_sprites.add(bullet)
