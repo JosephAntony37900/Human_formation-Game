@@ -110,6 +110,8 @@ class CellLevel:
         self.zone = "gas"
         self.last_enemy_spawn_time = pygame.time.get_ticks()
         self.enemy_spawn_interval = 2000
+        self.music_start_time = pygame.time.get_ticks()
+        self.music_started = False
 
     def run(self):
         while self.running:
@@ -130,6 +132,7 @@ class CellLevel:
         if not self.game_over:
             keys = get_keys()
             if not self.game_paused:
+                music_current_time = pygame.time.get_ticks()
                 self.time_to_change_zone = pygame.time.get_ticks() - self.start_time
                 background_is_moving = self.player.update(keys, self.min_allowed_x, self.max_allowed_x, 300, self.max_allowed_y, self)
                 for bot in self.bots:
@@ -158,6 +161,7 @@ class CellLevel:
                 elif self.time_to_change_zone >= 140000 and self.time_to_change_zone <= 200000: # 140 seg
                     self.zone_name = "ENEMIGOS"
                     self.leucocito_zone.spawn_enemy(self)
+                    self.lactobacilo_zone.spawn_enemy(self)
                 elif self.time_to_change_zone >= 200000: # 200 seg
                     self.zone_name = "PRINCESS"
                 
@@ -173,6 +177,11 @@ class CellLevel:
 
                 elif self.zone == "lactobacilo":
                     self.lactobacilo_zone.update_lactobacilos(self.background_y)
+                
+                if not self.music_started and music_current_time - self.music_start_time >= 15000:
+                    pygame.mixer.music.load("assets/music/Cosmicv1.mp3")
+                    pygame.mixer.music.play(-1)
+                    self.music_started = True
 
 
             current_time = pygame.time.get_ticks()

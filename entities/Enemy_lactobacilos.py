@@ -23,7 +23,7 @@ class Spittle(pygame.sprite.Sprite):
                 frames.append(pygame.transform.scale(image, (30, 30)))
         return frames
 
-    def update(self):
+    def update(self, player, bots):
         # Movimiento
         self.rect.x += int(self.speed * self.direction[0])
         self.rect.y += int(self.speed * self.direction[1])
