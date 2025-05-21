@@ -37,6 +37,10 @@ class Player(pygame.sprite.Sprite):
         self.shoot_animation_speed = 40
         self.shoot_sound = pygame.mixer.Sound("assets/music/shot_sound.mp3")
 
+        self.damage_effect = False
+        self.damage_effect_timer = 0
+        self.damage_effect_duration = 300
+
 
     def load_frames(self, folder_path):
         frames = []
@@ -156,12 +160,23 @@ class Player(pygame.sprite.Sprite):
         if not self.invincible:
             self.invincible = True
             self.invincibility_timer = pygame.time.get_ticks()
+            self.damage_effect = True
+            self.damage_effect_timer = pygame.time.get_ticks()
             return True
         return False
 
     def draw(self, screen):
         screen.blit(self.image, self.rect.topleft)
         self.bullets.draw(screen)
+
+        if self.damage_effect:
+            current_time = pygame.time.get_ticks()
+            if current_time - self.damage_effect_timer < self.damage_effect_duration:
+                red_overlay = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
+                red_overlay.fill((255, 0, 0, 100))
+                screen.blit(red_overlay, (0,0))
+            else:
+                self.damage_effect = False
 
     def reset(self, x, y):
         self.rect.topleft = (x, y)
