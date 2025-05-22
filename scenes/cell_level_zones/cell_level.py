@@ -114,7 +114,7 @@ class CellLevel:
         self.music_start_time = pygame.time.get_ticks()
         self.music_started = False
         self.princess_spawned = False
-        self.princess
+        self.princess = None
 
     def run(self):
         while self.running:
@@ -169,6 +169,8 @@ class CellLevel:
                     self.zone_name = "PRINCESS"
                     if not self.princess_spawned:
                         self.princess = PrincessMononoke()
+                        self.all_sprites.add(self.princess)
+                        self.princess_spawned = True
                 
                 if self.zone == "gas" and self.gases_avoided >= 20:
                   self.zone = "leucocito"
@@ -249,9 +251,11 @@ class CellLevel:
                     print(f"Vida restante (tras tocar leucocito): {self.player_lives}%")
                     if self.player_lives <= 0:
                         self.game_over = True
-            if hits:
-                if self.player.rect.colliderect(self.princess):
-                    self.win_level() #Lógica de ganar el nivel
+
+            if self.princess_spawned:   
+                hits = self.player.rect.colliderect(self.princess.rect)
+                if hits:
+                        self.win_level() #Lógica de ganar el nivel
 
             for bullet in self.player.bullets:
                 hits = pygame.sprite.spritecollide(bullet, self.enemies, True)
@@ -270,9 +274,10 @@ class CellLevel:
                     bot.take_damage(25.0)
             
             for bot in self.bots:
-                hits = pygame.sprite.spritecollide(bot, self.princess, False)
-                if hits:
-                    pass # Agregar la lógica para perder
+                if self.princess_spawned:
+                    hits = pygame.sprite.spritecollide(bot, self.princess, False)
+                    if hits:
+                        pass # Agregar la lógica para perder
 
     def draw(self):
         if self.background:
