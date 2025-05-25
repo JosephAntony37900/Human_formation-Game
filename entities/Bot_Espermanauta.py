@@ -6,7 +6,7 @@ import random
 class BotEspermanauta(Player):
     def __init__(self, x, y):
         super().__init__(x, y)
-        self.image = pygame.transform.scale(self.frames[self.current_frame], (80, 80))
+        self.image = pygame.transform.scale(self.frames[self.current_frame], (100, 100))
         self.speed = 4
         self.direction = 1
         self.direction_y = 1
@@ -44,7 +44,7 @@ class BotEspermanauta(Player):
         if len(self.frames) > 1:
             if current_time - self.last_update >= self.frame_rate:
                 self.current_frame = (self.current_frame + 1) % len(self.frames)
-                self.image = pygame.transform.scale(self.frames[self.current_frame], (80, 80))
+                self.image = pygame.transform.scale(self.frames[self.current_frame], (100, 100))
                 self.image.set_colorkey((0, 0, 0))
                 self.last_update = current_time
 

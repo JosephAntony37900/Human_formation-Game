@@ -8,13 +8,13 @@ class GasZone:
         self.all_sprites = all_sprites
         self.gases = pygame.sprite.Group()
         self.spawned_zones = set()
-        self.spawn_interval_y = 400
-        self.gas_radius = 100
+        self.spawn_interval_y = 200
+        self.gas_radius = 50
         self.spawn_zone_height = 300
-        self.max_obstacles_per_zone = 5
+        self.max_obstacles_per_zone = 10
         self.full_map_spawn = False
-        self.spawn_delay = 10000
-        self.full_map_spawn_delay = 20000
+        self.spawn_delay = 3000
+        self.full_map_spawn_delay = 6000
         self.start_time = pygame.time.get_ticks()
         self.music_start_time = pygame.time.get_ticks()
         self.music_started = False
@@ -42,19 +42,15 @@ class GasZone:
         if not self.full_map_spawn and current_time - self.start_time > self.full_map_spawn_delay:
             self.full_map_spawn = True
 
-        zone_y = (player_y + 300) // self.spawn_interval_y * self.spawn_interval_y
+        zone_y = (player_y - 300) // self.spawn_interval_y * self.spawn_interval_y
         if zone_y in self.spawned_zones:
             return
 
         self.spawned_zones.add(zone_y)
 
         for _ in range(self.max_obstacles_per_zone):
-            if self.full_map_spawn:
-                x = random.randint(50, self.screen.get_width() - 50)
-                y = random.randint(zone_y, zone_y + self.spawn_zone_height)
-            else:
-                x = random.randint(player_x - self.gas_radius, player_x + self.gas_radius)
-                y = random.randint(zone_y, zone_y + self.spawn_zone_height)
+            x = random.randint(50, self.screen.get_width() - 50)
+            y = random.randint(zone_y, zone_y + self.spawn_zone_height)
 
             x = max(50, min(x, self.screen.get_width() - 50))
             y = max(min_allowed_y, min(y, max_allowed_y))
