@@ -59,13 +59,20 @@ class EnemyLeucocito(pygame.sprite.Sprite):
         self.rect.x += int(self.speed * dx / distance)
         self.rect.y += int(self.speed * dy / distance)
         
-        # animacion de los frames
+        # animacion de los frames con flip horizontal si el objetivo esta a la izquierda
         if len(self.frames) > 1:
             current_time = pygame.time.get_ticks()
             if current_time - self.last_update >= self.frame_rate:
                 self.current_frame = (self.current_frame + 1) % len(self.frames)
-                self.image = pygame.transform.scale(self.frames[self.current_frame], (80, 80))
-                self.image = self.image.convert_alpha()
-                self.image.set_colorkey((0, 0, 0))  # reaplicar transparencia (agregue un manejo de colision como aviso)
+                
+                frame = self.frames[self.current_frame]
+                frame_scaled = pygame.transform.scale(frame, (80, 80))
+
+                # Flip horizontal si el objetivo esta a la izquierda se pude variar pero esta bien optimizado
+                if dx < 0:
+                    frame_scaled = pygame.transform.flip(frame_scaled, True, False)
+
+                self.image = frame_scaled.convert_alpha()
+                self.image.set_colorkey((0, 0, 0))
                 self.last_update = current_time
                 print(f"Frame actual del leucocito: {self.current_frame}")
