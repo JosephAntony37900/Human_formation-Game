@@ -6,13 +6,13 @@ import random
 class BotEspermanauta(Player):
     def __init__(self, x, y):
         super().__init__(x, y)
-        self.image = pygame.transform.scale(self.frames[self.current_frame], (80, 80))
+        self.image = pygame.transform.scale(self.frames[self.current_frame], (100, 100))
         self.speed = 4
         self.direction = 1
         self.direction_y = 1
         self.movement_timer = pygame.time.get_ticks()
         self.change_direction_interval = 2000
-        self.max_health = 1000000
+        self.max_health = 150000
         self.health = self.max_health
         self.random_explore_dir = pgmath.Vector2(0, 0)
         self.last_random_time = pygame.time.get_ticks()
@@ -22,9 +22,23 @@ class BotEspermanauta(Player):
         self.slow_duration = 2000  # milisegundos
         self.original_speed = self.speed
 
-    def update(self, min_x, max_x, min_y, max_y, level, enemies, obstacles, background_is_moving):
+    def update(self, min_x, max_x, min_y, max_y, level, enemies, obstacles, background_is_moving, princesses):
        
         self.detect_and_evade(list(obstacles) + list(enemies), background_is_moving, min_x, max_x)
+
+        if len(princesses) > 0:
+            closets_target = min(
+                princesses,
+                key = lambda t: (t.rect.centerx - self.rect.centerx) ** 2 + (t.rect.centery - self.rect.centery) ** 2
+            )
+        
+            dx = closets_target.rect.centerx - self.rect.centerx
+            dy = closets_target.rect.centery - self.rect.centery
+
+            distance = max(1, (dx ** 2 + dy ** 2) ** 0.5)
+
+            self.rect.x += int((self.speed * dx / distance) * 0.75)
+            self.rect.y += int((self.speed * dy / distance) * 0.75)
 
         self.handle_animation_and_status()
 
@@ -44,7 +58,7 @@ class BotEspermanauta(Player):
         if len(self.frames) > 1:
             if current_time - self.last_update >= self.frame_rate:
                 self.current_frame = (self.current_frame + 1) % len(self.frames)
-                self.image = pygame.transform.scale(self.frames[self.current_frame], (80, 80))
+                self.image = pygame.transform.scale(self.frames[self.current_frame], (100, 100))
                 self.image.set_colorkey((0, 0, 0))
                 self.last_update = current_time
 
