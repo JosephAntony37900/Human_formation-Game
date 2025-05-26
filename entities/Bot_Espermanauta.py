@@ -12,7 +12,7 @@ class BotEspermanauta(Player):
         self.direction_y = 1
         self.movement_timer = pygame.time.get_ticks()
         self.change_direction_interval = 2000
-        self.max_health = 250000
+        self.max_health = 150000
         self.health = self.max_health
         self.random_explore_dir = pgmath.Vector2(0, 0)
         self.last_random_time = pygame.time.get_ticks()
@@ -37,8 +37,8 @@ class BotEspermanauta(Player):
 
             distance = max(1, (dx ** 2 + dy ** 2) ** 0.5)
 
-            self.rect.x += int((self.speed * dx / distance) * 0.5)
-            self.rect.y += int((self.speed * dy / distance) * 0.5)
+            self.rect.x += int((self.speed * dx / distance) * 0.75)
+            self.rect.y += int((self.speed * dy / distance) * 0.75)
 
         self.handle_animation_and_status()
 

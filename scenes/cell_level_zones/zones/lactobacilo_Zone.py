@@ -17,7 +17,7 @@ class LactobaciloZone:
     def spawn_enemy(self, level):
         now = pygame.time.get_ticks()
         if now - self.last_enemy_time > self.enemy_coldown:
-            if random.random() < 0.1:
+            if random.random() < 0.3:
                 self.last_enemy_time = now
                 screen_width = self.screen.get_width()
 
