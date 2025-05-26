@@ -57,7 +57,7 @@ class CellLevel:
         self.spittle_group = pygame.sprite.Group()
         self.time_to_change_zone = pygame.time.get_ticks()
         self.zone_name = ""
-
+        self.princess = pygame.sprite.GroupSingle()  # Solo una princesa
 
         try:
             self.kill_font = pygame.font.Font("assets/Pixelify_Sans/pixelfont.ttf", 25)
