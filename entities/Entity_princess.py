@@ -20,7 +20,7 @@ class PrincessMononoke(pygame.sprite.Sprite):
         print(f"Color clave para transparencia: {background_color}")
 
         self.rect = self.image.get_rect()
-        self.rect.x = 650
+        self.rect.x = 900
         self.rect.y = -50
         self.speed = 3
         self.last_update = pygame.time.get_ticks()
@@ -43,6 +43,7 @@ class PrincessMononoke(pygame.sprite.Sprite):
         return frames
     
     def update(self):
+        self.rect.y += self.speed
         if len(self.frames) > 1:
             current_time = pygame.time.get_ticks()
             if current_time - self.last_update >= self.frame_rate:
