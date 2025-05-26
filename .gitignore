@@ -18,9 +18,9 @@ dist-ssr
 .idea
 .DS_Store
 *.suo
-*.ntvs*
+.ntvs
 *.njsproj
 *.sln
 *.sw?
 *.pyc
-__pycache__/
+_pycache_/

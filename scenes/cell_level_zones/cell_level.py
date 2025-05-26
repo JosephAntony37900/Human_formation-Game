@@ -114,7 +114,17 @@ class CellLevel:
         self.music_start_time = pygame.time.get_ticks()
         self.music_started = False
         self.princess_spawned = False
-        self.princess = None
+        self.princess = pygame.sprite.Group()
+
+        try:
+            self.win_image = pygame.image.load("assets/backgrounds/final_escene_level1.png")
+            info = pygame.display.Info()
+            self.win_image = pygame.transform.scale(self.win_image, (info.current_w, info.current_h))
+        except:
+            print(f"Error cargando imagen de victoria: {e}")
+            self.win_image = None
+        
+        self.win_font = pygame.font.Font(None, 48)
 
     def run(self):
         while self.running:
@@ -139,7 +149,7 @@ class CellLevel:
                 self.time_to_change_zone = pygame.time.get_ticks() - self.start_time
                 background_is_moving = self.player.update(keys, self.min_allowed_x, self.max_allowed_x, 300, self.max_allowed_y, self)
                 for bot in self.bots:
-                    bot.update(self.min_allowed_x + 300, self.max_allowed_x - 300, 300, self.max_allowed_y, self, self.enemies, list(self.obstacles) + list(self.boosts), background_is_moving)
+                    bot.update(self.min_allowed_x + 300, self.max_allowed_x - 300, 300, self.max_allowed_y, self, self.enemies, list(self.obstacles) + list(self.boosts), background_is_moving, self.princess)
                 self.player.bullets.update()
 
                 self.update_obstacles()
@@ -151,26 +161,30 @@ class CellLevel:
                 self.moco_zone.update_mocos(self.player, self.bots, background_is_moving)
                 self.background_y += self.background_speed
 
-                if self.time_to_change_zone >= 10000 and self.time_to_change_zone <= 50000: # 10 seg
+                if self.time_to_change_zone >= 10000 and self.time_to_change_zone <= 20000: # 10 seg
                     self.zone_name = "GAS"
                     # self.gas_zone.spawn_gases(self.background_y, player_x, player_y, self.min_allowed_y, self.max_allowed_y)
                     self.gas_zone.spawn_gases_function(self)
-                elif self.time_to_change_zone >= 50000 and self.time_to_change_zone <= 110000: # 50 seg
+                elif self.time_to_change_zone >= 20000 and self.time_to_change_zone <= 30000: # 50 seg
                     self.zone_name = "RAMPAS"
                     self.wave_zone.spawn_waves(self)
-                elif self.time_to_change_zone >= 110000 and self.time_to_change_zone <= 140000: # 110 seg
+                elif self.time_to_change_zone >= 30000 and self.time_to_change_zone <= 40000: # 110 seg
                     self.zone_name = "MOCOS"
                     self.moco_zone.spawn_mocos(self.background_y, player_x, player_y, self.min_allowed_y, self.max_allowed_y)
-                elif self.time_to_change_zone >= 140000 and self.time_to_change_zone <= 200000: # 140 seg
+                elif self.time_to_change_zone >= 40000 and self.time_to_change_zone <= 50000: # 140 seg
                     self.zone_name = "ENEMIGOS"
                     self.leucocito_zone.spawn_enemy(self)
                     self.lactobacilo_zone.spawn_enemy(self)
-                elif self.time_to_change_zone >= 200000: # 200 seg
+                elif self.time_to_change_zone >= 50000: # 200 seg
                     self.zone_name = "PRINCESS"
                     if not self.princess_spawned:
-                        self.princess = PrincessMononoke()
+                        print("Princess spawned")
+                        self.princess.add(PrincessMononoke())
                         self.all_sprites.add(self.princess)
                         self.princess_spawned = True
+                    else:
+                        for princess in self.princess:
+                            princess.update()
                 
                 if self.zone == "gas" and self.gases_avoided >= 20:
                   self.zone = "leucocito"
@@ -253,7 +267,7 @@ class CellLevel:
                         self.game_over = True
 
             if self.princess_spawned:   
-                hits = self.player.rect.colliderect(self.princess.rect)
+                hits = pygame.sprite.spritecollide(self.player, self.princess, False)
                 if hits:
                         self.win_level() #Lógica de ganar el nivel
 
@@ -277,7 +291,7 @@ class CellLevel:
                 if self.princess_spawned:
                     hits = pygame.sprite.spritecollide(bot, self.princess, False)
                     if hits:
-                        pass # Agregar la lógica para perder
+                        self.game_over = True
 
     def draw(self):
         if self.background:
@@ -335,4 +349,78 @@ class CellLevel:
                     bot.slow_down()
 
     def win_level(self):
-        pass
+        self.game_over = True
+        pygame.mixer.music.stop()
+
+        if self.win_image:
+            self.screen.blit(self.win_image, (0, 0))
+
+        victory_text = (
+            "¡Victoria! Has logrado alcanzar a América y conquistar el planeta Gino-12034. "
+            "Ahora, con la unión de ustedes dos, podrán terraformar el mundo, y de esto, "
+            "surgirá algo nuevo..."
+        )
+
+        lines = self.wrap_text(victory_text, self.win_font, 580)  # 600 - 20 margen
+        line_height = self.win_font.get_height() + 5
+        total_text_height = len(lines) * line_height
+
+        overlay_height = total_text_height + 80  # 20px margen arriba + 25px margen abajo + espacio para texto final
+        overlay_rect = pygame.Rect(0, 0, 600, overlay_height)
+        overlay_rect.center = (self.screen.get_width() // 2, self.screen.get_height() // 2)
+
+        overlay = pygame.Surface((overlay_rect.width, overlay_rect.height))
+        overlay.set_alpha(180)
+        overlay.fill((0, 0, 0))
+        self.screen.blit(overlay, overlay_rect.topleft)
+
+        self.draw_wrapped_lines(
+            lines=lines,
+            font=self.win_font,
+            color=(255, 255, 255),
+            rect=overlay_rect,
+            surface=self.screen,
+            line_spacing=5
+        )
+
+        continue_text = self.health_font.render("Aprieta cualquier tecla para continuar", True, (255, 255, 255))
+        continue_rect = continue_text.get_rect(center=(self.screen.get_width() // 2, overlay_rect.bottom - 30))
+        self.screen.blit(continue_text, continue_rect)
+
+        pygame.display.flip()
+
+        waiting = True
+        while waiting:
+            for event in pygame.event.get():
+                if event.type == pygame.KEYDOWN or event.type == pygame.QUIT:
+                    waiting = False
+                    self.running = False
+
+
+    def wrap_text(self, text, font, max_width):
+        words = text.split(' ')
+        lines = []
+        line = ""
+
+        for word in words:
+            test_line = line + word + " "
+            if font.render(test_line, True, (0, 0, 0)).get_width() > max_width:
+                lines.append(line)
+                line = word + " "
+            else:
+                line = test_line
+
+        if line:
+            lines.append(line)
+
+        return lines
+
+
+    def draw_wrapped_lines(self, lines, font, color, rect, surface, line_spacing=5):
+        y = rect.top + 20  # margen superior
+        for line in lines:
+            line_surface = font.render(line.strip(), True, color)
+            line_rect = line_surface.get_rect(centerx=rect.centerx)
+            line_rect.top = y
+            surface.blit(line_surface, line_rect)
+            y += line_surface.get_height() + line_spacing
