@@ -1,28 +1,29 @@
-import random
+# scenes/cell_level_zones/zones/lactobacilo_Zone.py
 import pygame
-from entities.optimized_enemies import EnemyLeucocito
+import random
+from entities.optimized_enemies import EnemyLactobacilo
 
-class LeucocitoZone:
-    def __init__(self, entity_manager):
+class LactobaciloZone:
+    def __init__(self, entity_manager, spittle_group):
         self.entity_manager = entity_manager
+        self.spittle_group = spittle_group
         self.screen_width = pygame.display.Info().current_w
         self.spawn_enabled = False
         self.start_time = pygame.time.get_ticks()
-        self.background_y_threshold = 100
+        self.background_y_threshold = 150
         self.last_enemy_time = pygame.time.get_ticks()
         self.enemy_cooldown = 1000
-        self.max_enemies = 8
+        self.max_enemies = 6
     
     def spawn_enemy(self, level):
         now = pygame.time.get_ticks()
         if now - self.last_enemy_time > self.enemy_cooldown:
-            if random.random() < 0.1:
+            if random.random() < 0.3:
                 self.last_enemy_time = now
                 
-                enemy = EnemyLeucocito()
+                enemy = EnemyLactobacilo(self.spittle_group)
                 self.entity_manager.add_entity(enemy, "enemy")
                 
-                # Añadir a grupos específicos del level si es necesario
                 if hasattr(level, 'enemies'):
                     level.enemies.add(enemy)
     
@@ -36,16 +37,15 @@ class LeucocitoZone:
         
         if self.spawn_enabled:
             current_enemies = len([e for e in self.entity_manager.enemies 
-                                 if isinstance(e, EnemyLeucocito)])
+                                 if isinstance(e, EnemyLactobacilo)])
             
-            if current_enemies < self.max_enemies and random.random() < 0.04:
-                middle_third_start = self.screen_width // 3
-                middle_third_end = (self.screen_width * 2) // 3
-                middle_third_width = middle_third_end - middle_third_start
+            if current_enemies < self.max_enemies and random.random() < 0.03:
+                middle_start = self.screen_width // 3
+                middle_width = self.screen_width // 3
                 
-                enemy = EnemyLeucocito()
-                enemy.rect.x = middle_third_start + random.randint(
-                    0, middle_third_width - enemy.rect.width
+                enemy = EnemyLactobacilo(self.spittle_group)
+                enemy.rect.x = middle_start + random.randint(
+                    0, middle_width - enemy.rect.width
                 )
                 
                 self.entity_manager.add_entity(enemy, "enemy")
