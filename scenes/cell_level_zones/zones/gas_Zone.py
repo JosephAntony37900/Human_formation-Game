@@ -1,12 +1,12 @@
 import pygame
 import random
-from entities.Obstacule_gas import Obstacle
+from entities.optimized_obstacles import ObstacleGas
 
 class GasZone:
-    def __init__(self, screen, all_sprites):
-        self.screen = screen
-        self.all_sprites = all_sprites
-        self.gases = pygame.sprite.Group()
+    def __init__(self, entity_manager):
+        self.entity_manager = entity_manager
+        self.screen_width = pygame.display.Info().current_w
+        self.screen_height = pygame.display.Info().current_h
         self.spawned_zones = set()
         self.spawn_interval_y = 200
         self.gas_radius = 50
@@ -20,58 +20,64 @@ class GasZone:
         self.music_started = False
         self.last_gas_time = pygame.time.get_ticks()
         self.gas_cooldown = 1000
-
+    
     def spawn_gases_function(self, level):
-         now = pygame.time.get_ticks()
-         if now - self.last_gas_time > self.gas_cooldown:
-             if random.random() < 0.1:
+        now = pygame.time.get_ticks()
+        
+        if now - self.last_gas_time > self.gas_cooldown:
+            if random.random() < 0.1:
                 self.last_gas_time = now
-                screen_width = self.screen.get_width()
-
-                x = random.randint(50, screen_width - 50)
+                
+                x = random.randint(50, self.screen_width - 50)
                 y = -50
-
-                gas = Obstacle(x, y)
-                level.obstacles.add(gas)
-                level.all_sprites.add(gas)
-
+                
+                gas = ObstacleGas(x, y)
+                self.entity_manager.add_entity(gas, "obstacle")
+                
+                # Añadir a grupos específicos del level si es necesario
+                if hasattr(level, 'obstacles'):
+                    level.obstacles.add(gas)
+    
     def spawn_gases(self, background_y, player_x, player_y, min_allowed_y, max_allowed_y):
         current_time = pygame.time.get_ticks()
         if current_time - self.start_time < self.spawn_delay:
             return
+            
         if not self.full_map_spawn and current_time - self.start_time > self.full_map_spawn_delay:
             self.full_map_spawn = True
-
+        
         zone_y = (player_y - 300) // self.spawn_interval_y * self.spawn_interval_y
         if zone_y in self.spawned_zones:
             return
-
+        
         self.spawned_zones.add(zone_y)
-
+        
+        # Obtener gases actuales para verificar distancia
+        current_gases = [e for e in self.entity_manager.obstacles 
+                        if isinstance(e, ObstacleGas)]
+        
         for _ in range(self.max_obstacles_per_zone):
-            x = random.randint(50, self.screen.get_width() - 50)
+            x = random.randint(50, self.screen_width - 50)
             y = random.randint(zone_y, zone_y + self.spawn_zone_height)
-
-            x = max(50, min(x, self.screen.get_width() - 50))
+            
+            x = max(50, min(x, self.screen_width - 50))
             y = max(min_allowed_y, min(y, max_allowed_y))
-
+            
+            # Verificar distancia con gases existentes
             too_close = any(
                 ((gas.rect.centerx - x) ** 2 + (gas.rect.centery - y) ** 2) ** 0.5 < self.gas_radius
-                for gas in self.gases
+                for gas in current_gases
             )
-
+            
             if not too_close:
-                gas = Obstacle(x, y)
-                self.all_sprites.add(gas)
-                self.gases.add(gas)
-
+                gas = ObstacleGas(x, y)
+                self.entity_manager.add_entity(gas, "obstacle")
+        
+        # Manejar música
         if not self.music_started and current_time - self.music_start_time >= 15000:
-            pygame.mixer.music.load("assets/music/Cosmicv1.mp3")
-            pygame.mixer.music.play(-1)
-            self.music_started = True
-
-    def update_gases(self):
-        for gas in self.gases:
-            gas.update()
-            if gas.rect.y > self.screen.get_height() + 200:
-                gas.kill()
+            try:
+                pygame.mixer.music.load("assets/music/Cosmicv1.mp3")
+                pygame.mixer.music.play(-1)
+                self.music_started = True
+            except pygame.error as e:
+                print(f"Error cargando música: {e}")

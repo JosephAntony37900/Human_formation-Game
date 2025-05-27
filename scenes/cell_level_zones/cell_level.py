@@ -19,8 +19,15 @@ class CellLevel:
         self.sprite_manager = SpriteManager(self.game_manager.screen)
         self.ui_manager = UIManager(self.game_manager.screen)
         self.collision_manager = CollisionManager()
-        self.zone_manager = ZoneManager(self.game_manager.screen, self.sprite_manager.all_sprites, 
-                                      self.sprite_manager.enemies, self.sprite_manager.spittle_group)
+        
+        # ZoneManager ahora maneja internamente el EntityManager
+        self.zone_manager = ZoneManager(
+            self.game_manager.screen, 
+            self.sprite_manager.all_sprites, 
+            self.sprite_manager.enemies, 
+            self.sprite_manager.spittle_group
+        )
+        
         self.background_manager = BackgroundManager(self.game_manager.screen)
         self.narrator_manager = NarratorManager()
         
@@ -40,7 +47,8 @@ class CellLevel:
     
     @property
     def obstacles(self):
-        return self.sprite_manager.obstacles
+        # Ahora los obstáculos vienen del EntityManager del ZoneManager
+        return self.zone_manager.entity_manager.obstacles
     
     @property
     def boosts(self):
@@ -48,7 +56,8 @@ class CellLevel:
     
     @property
     def enemies(self):
-        return self.sprite_manager.enemies
+        # Los enemigos ahora vienen del EntityManager del ZoneManager
+        return self.zone_manager.entity_manager.enemies
     
     @property
     def all_sprites(self):
@@ -72,7 +81,7 @@ class CellLevel:
             if not self.game_manager.game_paused:
                 self.game_manager.update_game_state()
                 
-                # Actualizar sprites
+                # Actualizar sprites (jugador y bots principalmente)
                 background_is_moving = self.sprite_manager.update_sprites(
                     keys, 
                     self.game_manager.min_allowed_x, 
@@ -86,7 +95,7 @@ class CellLevel:
                 self.background_manager.update_background()
                 self.background_y = self.background_manager.background_y
                 
-                # Actualizar zonas
+                # Actualizar zonas - ahora maneja internamente las entidades optimizadas
                 should_spawn_princess = self.zone_manager.update_zones(
                     self.game_manager.time_to_change_zone, 
                     self, 
@@ -101,7 +110,7 @@ class CellLevel:
                     self.sprite_manager.spawn_princess()
                     self.game_manager.princess_spawned = True
                 
-                self.zone_manager.update_gas_zone()
+                #self.zone_manager.update_gas_zone()
                 self.collision_manager.apply_velocity_boosts(self.sprite_manager)
 
         # Actualizar narrador (siempre se ejecuta)
@@ -111,16 +120,16 @@ class CellLevel:
             
     @property
     def min_allowed_y(self):
-     return getattr(self.game_manager, 'min_allowed_y', 300)
+        return getattr(self.game_manager, 'min_allowed_y', 300)
 
     @min_allowed_y.setter
     def min_allowed_y(self, value):
-     self.game_manager.min_allowed_y = value
+        self.game_manager.min_allowed_y = value
 
     def check_collisions(self):
         damage_taken, level_won = self.collision_manager.check_all_collisions(
             self.sprite_manager, 
-            self.zone_manager.moco_zone, 
+            self.zone_manager,  
             self.game_manager
         )
         
@@ -132,42 +141,45 @@ class CellLevel:
         if level_won:
             self.game_manager.win_level(self.game_manager.screen)
         
-        # Actualizar contador de gases evitados
-        for gas in self.sprite_manager.obstacles:
-            if gas.rect.y > self.game_manager.screen.get_height():
+        # Actualizar contador de gases evitados - ahora usando el EntityManager
+        for gas in self.zone_manager.entity_manager.obstacles:
+            if hasattr(gas, 'rect') and gas.rect.y > self.game_manager.screen.get_height():
                 if self.zone_manager.zone == "gas":
                     self.zone_manager.count_gas_avoided()
      
     @property
     def background_speed(self):
-     return getattr(self.background_manager, 'background_speed', 2)
+        return getattr(self.background_manager, 'background_speed', 2)
 
     @background_speed.setter
     def background_speed(self, value):
-     if hasattr(self.background_manager, 'background_speed'):
-        self.background_manager.background_speed = value
-     else:
-        # Si no existe, crearlo
-        self.background_manager.background_speed = value
+        if hasattr(self.background_manager, 'background_speed'):
+            self.background_manager.background_speed = value
+        else:
+            # Si no existe, crearlo
+            self.background_manager.background_speed = value
 
     @property
     def original_background_speed(self):
-     return getattr(self.background_manager, 'original_background_speed', 2)
+        return getattr(self.background_manager, 'original_background_speed', 2)
 
     @original_background_speed.setter
     def original_background_speed(self, value):
-     if hasattr(self.background_manager, 'original_background_speed'):
-        self.background_manager.original_background_speed = value
-     else:
-        # Si no existe, crearlo
-        self.background_manager.original_background_speed = value     
+        if hasattr(self.background_manager, 'original_background_speed'):
+            self.background_manager.original_background_speed = value
+        else:
+            # Si no existe, crearlo
+            self.background_manager.original_background_speed = value     
      
     def draw(self):
         # Dibujar fondo
         self.background_manager.draw_background()
         
-        # Dibujar sprites
+        # Dibujar sprites (jugador, bots, etc.)
         self.sprite_manager.draw_sprites(self.game_manager.screen)
+        
+        # Dibujar todas las entidades gestionadas por ZoneManager
+        self.zone_manager.draw_all_entities(self.game_manager.screen)
         
         # Dibujar UI
         self.ui_manager.draw_health_bar(self.player_lives, self.max_lives)
