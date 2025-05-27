@@ -17,6 +17,13 @@ class BackgroundManager:
         self.ruta_fondo = ruta_fondo
         
         self.fondo = self._cargar_fondo()
+
+        self.en_transicion = False
+        self.alpha_overlay = 0
+        self.overlay_surface = pygame.Surface(self.screen.get_size())
+        self.overlay_surface.fill((0, 0, 0))
+        self.transicion_callback = None
+        self.transicion_tipo = None
         
     def _cargar_fondo(self):
         if not os.path.exists(self.ruta_fondo):
@@ -51,6 +58,25 @@ class BackgroundManager:
     
     def draw_background(self):
         self.dibujar_fondo()
+
+        if self.en_transicion:
+            if self.transicion_tipo == "oscurecer":
+                self.alpha_overlay += 5
+                if self.alpha_overlay >= 255:
+                    self.alpha_overlay = 255
+                    self.en_transicion = False
+                    if self.transicion_callback:
+                        self.transicion_callback()
+                        # Después del callback (cambiar fondo), iniciamos "aclarar"
+                        self.iniciar_transicion("aclarar")
+            elif self.transicion_tipo == "aclarar":
+                self.alpha_overlay -= 5
+                if self.alpha_overlay <= 0:
+                    self.alpha_overlay = 0
+                    self.en_transicion = False
+
+            self.overlay_surface.set_alpha(self.alpha_overlay)
+            self.screen.blit(self.overlay_surface, (0, 0))
     
     def establecer_velocidad(self, velocidad):
         self.velocidad_fondo = velocidad
@@ -104,3 +130,15 @@ class BackgroundManager:
     
     def sincronizar_posiciones(self):
         self.background_y = self.fondo_y
+    
+    def iniciar_transicion(self, tipo="oscurecer", callback=None):
+        self.en_transicion = True
+        self.transicion_tipo = tipo
+        self.transicion_callback = callback
+        self.alpha_overlay = 0 if tipo == "oscurecer" else 255
+
+    def change_end_background(self):
+        def aplicar_cambio():
+            self.cambiar_fondo("assets/backgrounds/escen_004.png")
+
+        self.iniciar_transicion("oscurecer", aplicar_cambio)

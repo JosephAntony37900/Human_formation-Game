@@ -40,6 +40,8 @@ class CellLevel:
                 
         # Propiedad para compatibilidad con zonas
         self.background_y = 0
+
+        self.background_was_changed = False
     
     @property
     def screen(self):
@@ -107,6 +109,7 @@ class CellLevel:
                 # Spawnar princesa si es necesario
                 if should_spawn_princess and not self.game_manager.princess_spawned:
                     print("Princess spawned")
+                    self.background_manager.change_end_background()
                     self.sprite_manager.spawn_princess()
                     self.game_manager.princess_spawned = True
                 

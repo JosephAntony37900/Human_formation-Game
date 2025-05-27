@@ -3,6 +3,7 @@ import pygame
 from entities.Player_model import Player
 from entities.Bot_Espermanauta import BotEspermanauta
 from entities.Entity_princess import PrincessMononoke
+from entities.Entity_Castle import Castle
 
 class SpriteManager:
     def __init__(self, screen):
@@ -16,6 +17,7 @@ class SpriteManager:
         self.spittle_group = pygame.sprite.Group()
         self.obstacles = pygame.sprite.Group()
         self.princess = pygame.sprite.Group()
+        self.castles = pygame.sprite.Group()
         
         # Crear jugador
         self.player = Player(100, 100)
@@ -34,7 +36,9 @@ class SpriteManager:
     def spawn_princess(self):
         princess = PrincessMononoke()
         self.princess.add(princess)
-        self.all_sprites.add(self.princess)
+        castle = Castle()
+        self.castles.add(castle)
+        self.all_sprites.add(self.princess, self.castles)
         return True
     
     def update_sprites(self, keys, min_x, max_x, min_y, max_y, level_ref):
@@ -67,6 +71,9 @@ class SpriteManager:
         # Actualizar princesa
         for princess in self.princess:
             princess.update()
+        
+        for castle in self.castles:
+            castle.update()
         
         return background_is_moving
     
