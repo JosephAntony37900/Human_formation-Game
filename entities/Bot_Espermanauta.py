@@ -24,7 +24,9 @@ class BotEspermanauta(Player):
         self.original_speed = self.speed
 
     def update(self, min_x, max_x, min_y, max_y, level, enemies, obstacles, background_is_moving, princesses):
-       
+        # Detectar y aplicar efectos de obstáculos
+        self.handle_obstacle_collisions(obstacles, level)
+        
         self.detect_and_evade(list(obstacles) + list(enemies), background_is_moving, min_x, max_x)
 
         if len(princesses) > 0:
@@ -47,8 +49,24 @@ class BotEspermanauta(Player):
         if self.slowed and current_time - self.slow_timer >= self.slow_duration:
             self.slowed = False
             self.speed = self.original_speed
-            level.background_speed = level.original_background_speed
 
+    def handle_obstacle_collisions(self, obstacles, level):
+        """Detecta colisiones con obstáculos y aplica sus efectos igual que al jugador"""
+        for obstacle in obstacles:
+            if self.rect.colliderect(obstacle.rect):
+                # Efecto de obstáculo de velocidad
+                if hasattr(obstacle, 'apply_impulse'):
+                    self.rect = obstacle.apply_impulse(self.rect)
+                elif hasattr(obstacle, 'impulse'):
+                    self.rect = obstacle.impulse(self.rect)
+                
+                # Efecto de moco (ralentizar)
+                elif obstacle.__class__.__name__ == 'ObstacleMoco':
+                    self.slow_down(level, False)
+                
+                # Efecto de gas (daño)
+                elif obstacle.__class__.__name__ == 'ObstacleGas':
+                    self.take_damage(20)  # Mismo daño que recibe el jugador
 
     def handle_animation_and_status(self):
         current_time = pygame.time.get_ticks()
@@ -74,7 +92,9 @@ class BotEspermanauta(Player):
             border_avoidance.x -= 3
 
         for obj in objects:
-            if self.rect.colliderect(obj.rect.inflate(100, 100)):
+            # Aumentar la distancia de detección para esquivar mejor
+            detection_inflate = 120
+            if self.rect.colliderect(obj.rect.inflate(detection_inflate, detection_inflate)):
                 diff = pgmath.Vector2(self.rect.center) - pgmath.Vector2(obj.rect.center)
                 distance = diff.length()
                 if distance > 0:
@@ -126,7 +146,6 @@ class BotEspermanauta(Player):
             self.rect.right = max_x
 
     def avoid_obstacles(self, obstacles):
-
         anticipation_distance = 25
 
         next_rect = self.rect.copy()
@@ -187,7 +206,6 @@ class BotEspermanauta(Player):
     
     def slow_down(self, level, background_is_moving):
         if not self.slowed:
-            self.rect.y -= self.speed
-            level.background_speed = 1
             self.slowed = True
             self.slow_timer = pygame.time.get_ticks()
+            # Solo ralentizar al bot, no afectar el fondo del nivel
