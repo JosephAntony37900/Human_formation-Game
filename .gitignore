@@ -24,3 +24,6 @@ dist-ssr
 *.sw?
 *.pyc
 _pycache_/
+
+echo "*.pyc" >> .gitignore
+echo "__pycache__/" >> .gitignore
