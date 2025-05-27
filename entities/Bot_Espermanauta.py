@@ -27,6 +27,9 @@ class BotEspermanauta(Player):
         # Detectar y aplicar efectos de obstáculos
         self.handle_obstacle_collisions(obstacles, level)
         
+        # Detectar colisiones con enemigos y recibir daño
+        self.handle_enemy_collisions(enemies)
+        
         self.detect_and_evade(list(obstacles) + list(enemies), background_is_moving, min_x, max_x)
 
         if len(princesses) > 0:
@@ -49,6 +52,32 @@ class BotEspermanauta(Player):
         if self.slowed and current_time - self.slow_timer >= self.slow_duration:
             self.slowed = False
             self.speed = self.original_speed
+
+    def handle_enemy_collisions(self, enemies):
+        """Detecta colisiones con enemigos y aplica daño"""
+        for enemy in enemies:
+            if self.rect.colliderect(enemy.rect):
+                if not self.invincible:  # Solo recibe daño si no es invencible
+                    # Diferentes tipos de enemigos causan diferente daño
+                    damage = 25  # Daño base
+                    if hasattr(enemy, '__class__'):
+                        if enemy.__class__.__name__ == 'EnemyLeucocito':
+                            damage = 30
+                        elif enemy.__class__.__name__ == 'EnemyLactobacilo':
+                            damage = 35
+                        elif enemy.__class__.__name__ == 'Spittle':
+                            damage = 15
+                    
+                    self.take_damage(damage)
+                    
+                    # Aplicar un pequeño empujón para separar del enemigo
+                    push_force = 20
+                    dx = self.rect.centerx - enemy.rect.centerx
+                    dy = self.rect.centery - enemy.rect.centery
+                    distance = max(1, (dx ** 2 + dy ** 2) ** 0.5)
+                    
+                    self.rect.x += int((push_force * dx / distance))
+                    self.rect.y += int((push_force * dy / distance))
 
     def handle_obstacle_collisions(self, obstacles, level):
         """Detecta colisiones con obstáculos y aplica sus efectos igual que al jugador"""
@@ -92,13 +121,20 @@ class BotEspermanauta(Player):
             border_avoidance.x -= 3
 
         for obj in objects:
-            # Aumentar la distancia de detección para esquivar mejor
+            # Aumentar la distancia de detección para enemigos específicamente
             detection_inflate = 120
+            
+            # Mayor distancia de evasión para enemigos
+            if hasattr(obj, '__class__') and obj.__class__.__name__ in ['EnemyLeucocito', 'EnemyLactobacilo', 'Spittle']:
+                detection_inflate = 150  # Mayor distancia para enemigos
+            
             if self.rect.colliderect(obj.rect.inflate(detection_inflate, detection_inflate)):
                 diff = pgmath.Vector2(self.rect.center) - pgmath.Vector2(obj.rect.center)
                 distance = diff.length()
                 if distance > 0:
-                    avoidance_force += diff.normalize() / distance
+                    # Mayor fuerza de evasión para enemigos
+                    force_multiplier = 2.0 if hasattr(obj, '__class__') and obj.__class__.__name__ in ['EnemyLeucocito', 'EnemyLactobacilo', 'Spittle'] else 1.0
+                    avoidance_force += (diff.normalize() / distance) * force_multiplier
 
         total_force = avoidance_force + border_avoidance
 
@@ -200,9 +236,14 @@ class BotEspermanauta(Player):
             self.rect.x += self.speed * self.direction
     
     def take_damage(self, damage):
-        self.health -= damage
-        if self.health <= 0:
-            self.kill()
+        if not self.invincible:
+            self.health -= damage
+            # Activar invencibilidad temporal después de recibir daño
+            self.invincible = True
+            self.invincibility_timer = pygame.time.get_ticks()
+            
+            if self.health <= 0:
+                self.kill()
     
     def slow_down(self, level, background_is_moving):
         if not self.slowed:

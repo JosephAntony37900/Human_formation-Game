@@ -5,7 +5,6 @@ from entities.base_entity import BaseEntity
 
 
 class EnemyLeucocito(BaseEntity):
-    """Enemigo leucocito optimizado con seguimiento inteligente"""
     
     def __init__(self):
         import random
@@ -81,20 +80,16 @@ class Spittle(BaseEntity):
             self.mark_for_deletion()
 
 class EnemyLactobacilo(BaseEntity):
-    """Enemigo lactobacilo optimizado"""
-    
     def __init__(self, spittle_group):
         import random
         screen_w = pygame.display.Info().current_w
         x = random.randint(100, screen_w - 100)
         
         super().__init__(x, -60, (80, 80), "assets/enemies/lactobacilo/moving", 20, 150)
-        
         # Cargar frames de ataque
         self.attack_frames = self.resource_manager.load_animation(
             "assets/enemies/lactobacilo/attack", (80, 80)
         )
-        
         # Rotar frames
         self.frames = [pygame.transform.rotate(frame, 90) for frame in self.frames]
         self.attack_frames = [pygame.transform.rotate(frame, 90) for frame in self.attack_frames]
@@ -108,7 +103,6 @@ class EnemyLactobacilo(BaseEntity):
     def update(self, player, bots):
         self.rect.y += self.speed
         
-        # Lógica de ataque comentada como solicitaste
         # now = pygame.time.get_ticks()
         # if now - self.last_spit > self.spit_cooldown:
         #     targets = [player] + list(bots)
