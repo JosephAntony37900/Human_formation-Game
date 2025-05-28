@@ -22,7 +22,7 @@ class WavesZone:
                 directions = ["UP", "LEFT", "RIGHT", "DOWN"]
                 direction = random.choice(directions)
                 
-                wave = ObstacleVelocity(x, y, direction)
+                wave = ObstacleVelocity(x, y, direction, level.background_manager)
                 self.entity_manager.add_entity(wave, "obstacle")
                 
                 # Añadir a grupos específicos del level si es necesario

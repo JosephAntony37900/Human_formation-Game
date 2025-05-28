@@ -6,18 +6,16 @@ class BackgroundManager:
     def __init__(self, screen, ruta_fondo="assets/backgrounds/background_1.png", velocidad=2):
         self.screen = screen
         self.screen_rect = screen.get_rect()
-        
+        self.velocidad_temporal_duracion = 0
+        self.tiempo_activacion_temporal = None
         self.background_y = 0  
         self.background_speed = velocidad  
-        self.original_background_speed = velocidad  
-        
+        self.original_background_speed = velocidad
         self.fondo_y = 0
         self.velocidad_fondo = velocidad
         self.velocidad_original = velocidad
         self.ruta_fondo = ruta_fondo
-        
         self.fondo = self._cargar_fondo()
-
         self.en_transicion = False
         self.alpha_overlay = 0
         self.overlay_surface = pygame.Surface(self.screen.get_size())
@@ -39,6 +37,12 @@ class BackgroundManager:
             return None
     
     def actualizar_fondo(self, dt=1):
+        now = pygame.time.get_ticks()
+        if self.tiempo_activacion_temporal:
+            if now - self.tiempo_activacion_temporal >= self.velocidad_temporal_duracion:
+                self.resetear_velocidad()
+                self.tiempo_activacion_temporal = None
+
         self.background_speed = self.velocidad_fondo  
         self.background_y += self.background_speed * dt
         self.fondo_y = self.background_y  
@@ -78,9 +82,11 @@ class BackgroundManager:
             self.overlay_surface.set_alpha(self.alpha_overlay)
             self.screen.blit(self.overlay_surface, (0, 0))
     
-    def establecer_velocidad(self, velocidad):
+    def establecer_velocidad(self, velocidad, duracion_ms=500 ):
         self.velocidad_fondo = velocidad
-        self.background_speed = velocidad  
+        self.background_speed = velocidad
+        self.tiempo_activacion_temporal = pygame.time.get_ticks()
+        self.velocidad_temporal_duracion = duracion_ms  
     
     def resetear_velocidad(self):
         self.velocidad_fondo = self.velocidad_original

@@ -10,6 +10,8 @@ class BotEspermanauta(Player):
         self.image = pygame.transform.scale(self.frames[self.current_frame], (100, 100))
         self.speed = 4
         self.direction = 1
+        self.frozen_by_boost = False
+
         self.direction_y = 1
         self.movement_timer = pygame.time.get_ticks()
         self.change_direction_interval = 2000
@@ -52,6 +54,11 @@ class BotEspermanauta(Player):
         if self.slowed and current_time - self.slow_timer >= self.slow_duration:
             self.slowed = False
             self.speed = self.original_speed
+            
+        if self.frozen_by_boost:
+            self.handle_animation_and_status()
+            return
+
 
     def handle_enemy_collisions(self, enemies):
         """Detecta colisiones con enemigos y aplica daño"""
@@ -89,9 +96,12 @@ class BotEspermanauta(Player):
                 elif hasattr(obstacle, 'impulse'):
                     self.rect = obstacle.impulse(self.rect)
                 
-                # Efecto de moco (ralentizar)
                 elif obstacle.__class__.__name__ == 'ObstacleMoco':
                     self.slow_down(level, False)
+                    self.rect.y += 12 
+                    
+                    print(f"Bot {self} empujado por ObstacleMoco")
+
                 
                 # Efecto de gas (daño)
                 elif obstacle.__class__.__name__ == 'ObstacleGas':
@@ -220,20 +230,22 @@ class BotEspermanauta(Player):
             test_direction = -self.direction
             test_rect = self.rect.copy()
             test_rect.x += (self.speed + anticipation_distance) * test_direction
-
             can_evade = not any(test_rect.colliderect(ob.rect) for ob in enemies)
-
             if can_evade:
                 self.direction = test_direction
                 self.rect.x += self.speed * self.direction
             else:
                 down_rect = self.rect.copy()
                 down_rect.y += self.speed * 10
-
                 if not any(down_rect.colliderect(ob.rect) for ob in enemies):
                     self.rect.y += self.speed * 10
         else:
             self.rect.x += self.speed * self.direction
+            
+    def freeze_due_to_player_boost(self):
+        self.frozen_by_boost = True
+    def unfreeze(self):
+        self.frozen_by_boost = False  #Metodos para que no se muevan los bots cuando se mueva el player en rampa
     
     def take_damage(self, damage):
         if not self.invincible:
@@ -246,7 +258,8 @@ class BotEspermanauta(Player):
                 self.kill()
     
     def slow_down(self, level, background_is_moving):
-        if not self.slowed:
-            self.slowed = True
-            self.slow_timer = pygame.time.get_ticks()
-            # Solo ralentizar al bot, no afectar el fondo del nivel
+        if not self.slowed: 
+           self.w_blocked = True
+           self.block_timer = pygame.time.get_ticks()
+           self.rect.y += 7
+

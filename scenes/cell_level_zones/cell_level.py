@@ -133,7 +133,8 @@ class CellLevel:
         damage_taken, level_won = self.collision_manager.check_all_collisions(
             self.sprite_manager, 
             self.zone_manager,  
-            self.game_manager
+            self.game_manager,
+            
         )
         
         if damage_taken > 0:
