@@ -10,7 +10,7 @@ class MocoZone:
         self.last_generation_time = pygame.time.get_ticks()
         self.spawn_delay = 400
     
-    def spawn_mocos(self, background_y, player_x, player_y, min_allowed_y, max_allowed_y):
+    def spawn_mocos(self, background_y, player_x, player_y, min_allowed_y, max_allowed_y, sprite_manager):
         current_time = pygame.time.get_ticks()
         elapsed_time = current_time - self.last_generation_time
         
@@ -22,6 +22,7 @@ class MocoZone:
         y = player_y - random.randint(self.screen_height, self.screen_height + 300)
         
         moco = ObstacleMoco(x, y)
+        sprite_manager.mocos.add(moco)
         self.entity_manager.add_entity(moco, "obstacle")
     
     def check_collision_with_player(self, player):

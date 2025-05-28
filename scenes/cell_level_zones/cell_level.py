@@ -23,8 +23,7 @@ class CellLevel:
         # ZoneManager ahora maneja internamente el EntityManager
         self.zone_manager = ZoneManager(
             self.game_manager.screen, 
-            self.sprite_manager.all_sprites, 
-            self.sprite_manager.enemies, 
+            self.sprite_manager,
             self.sprite_manager.spittle_group
         )
         
@@ -103,13 +102,14 @@ class CellLevel:
                     self, 
                     self.sprite_manager.player, 
                     self.sprite_manager.bots, 
-                    background_is_moving
+                    background_is_moving,
+                    self.background_manager
                 )
                 
                 # Spawnar princesa si es necesario
                 if should_spawn_princess and not self.game_manager.princess_spawned:
                     print("Princess spawned")
-                    self.background_manager.change_end_background()
+                    # self.background_manager.change_end_background()
                     self.sprite_manager.spawn_princess()
                     self.game_manager.princess_spawned = True
                 
