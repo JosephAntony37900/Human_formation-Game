@@ -6,17 +6,22 @@ class BackgroundManager:
     def __init__(self, screen, ruta_fondo="assets/backgrounds/background_1.png", velocidad=2):
         self.screen = screen
         self.screen_rect = screen.get_rect()
-        
+        self.velocidad_temporal_duracion = 0
+        self.tiempo_activacion_temporal = None
         self.background_y = 0  
         self.background_speed = velocidad  
-        self.original_background_speed = velocidad  
-        
+        self.original_background_speed = velocidad
         self.fondo_y = 0
         self.velocidad_fondo = velocidad
         self.velocidad_original = velocidad
         self.ruta_fondo = ruta_fondo
-        
         self.fondo = self._cargar_fondo()
+        self.en_transicion = False
+        self.alpha_overlay = 0
+        self.overlay_surface = pygame.Surface(self.screen.get_size())
+        self.overlay_surface.fill((0, 0, 0))
+        self.transicion_callback = None
+        self.transicion_tipo = None
         
     def _cargar_fondo(self):
         if not os.path.exists(self.ruta_fondo):
@@ -32,6 +37,12 @@ class BackgroundManager:
             return None
     
     def actualizar_fondo(self, dt=1):
+        now = pygame.time.get_ticks()
+        if self.tiempo_activacion_temporal:
+            if now - self.tiempo_activacion_temporal >= self.velocidad_temporal_duracion:
+                self.resetear_velocidad()
+                self.tiempo_activacion_temporal = None
+
         self.background_speed = self.velocidad_fondo  
         self.background_y += self.background_speed * dt
         self.fondo_y = self.background_y  
@@ -51,10 +62,31 @@ class BackgroundManager:
     
     def draw_background(self):
         self.dibujar_fondo()
+
+        if self.en_transicion:
+            if self.transicion_tipo == "oscurecer":
+                self.alpha_overlay += 5
+                if self.alpha_overlay >= 255:
+                    self.alpha_overlay = 255
+                    self.en_transicion = False
+                    if self.transicion_callback:
+                        self.transicion_callback()
+                        # Después del callback (cambiar fondo), iniciamos "aclarar"
+                        self.iniciar_transicion("aclarar")
+            elif self.transicion_tipo == "aclarar":
+                self.alpha_overlay -= 5
+                if self.alpha_overlay <= 0:
+                    self.alpha_overlay = 0
+                    self.en_transicion = False
+
+            self.overlay_surface.set_alpha(self.alpha_overlay)
+            self.screen.blit(self.overlay_surface, (0, 0))
     
-    def establecer_velocidad(self, velocidad):
+    def establecer_velocidad(self, velocidad, duracion_ms=500 ):
         self.velocidad_fondo = velocidad
-        self.background_speed = velocidad  
+        self.background_speed = velocidad
+        self.tiempo_activacion_temporal = pygame.time.get_ticks()
+        self.velocidad_temporal_duracion = duracion_ms  
     
     def resetear_velocidad(self):
         self.velocidad_fondo = self.velocidad_original
@@ -104,3 +136,15 @@ class BackgroundManager:
     
     def sincronizar_posiciones(self):
         self.background_y = self.fondo_y
+    
+    def iniciar_transicion(self, tipo="oscurecer", callback=None):
+        self.en_transicion = True
+        self.transicion_tipo = tipo
+        self.transicion_callback = callback
+        self.alpha_overlay = 0 if tipo == "oscurecer" else 255
+
+    def change_end_background(self):
+        def aplicar_cambio():
+            self.cambiar_fondo("assets/backgrounds/escen_004.png")
+
+        self.iniciar_transicion("oscurecer", aplicar_cambio)

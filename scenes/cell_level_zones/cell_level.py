@@ -92,6 +92,7 @@ class CellLevel:
                 )
                 if should_spawn_princess and not self.game_manager.princess_spawned:
                     print("Princess spawned")
+                    self.background_manager.change_end_background()
                     self.sprite_manager.spawn_princess()
                     self.game_manager.princess_spawned = True
                 self.collision_manager.apply_velocity_boosts(self.sprite_manager)

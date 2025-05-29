@@ -1,6 +1,5 @@
-#entities/Obstacle_moco.py
+# entities/Obstacle_moco.py
 import pygame
-import random
 import os
 
 class Moco(pygame.sprite.Sprite):
@@ -11,17 +10,15 @@ class Moco(pygame.sprite.Sprite):
 
         if len(self.frames) <= 1:
             print("Advertencia: Solo se cargó 1 frame, no habrá animación")
-
         self.current_frame = 0
         self.image = pygame.transform.scale(self.frames[self.current_frame], (65, 65))
         self.image = self.image.convert_alpha()
-        background_color = (255, 255, 255)  
-        self.image.set_colorkey(background_color)
-
+        self.image.set_colorkey((255, 255, 255))
         self.rect = self.image.get_rect()
         self.rect.x = x
         self.rect.y = y
         self.speed = 7
+        self.boost = 12  
         self.last_update = pygame.time.get_ticks()
         self.frame_rate = 150
 
@@ -48,3 +45,12 @@ class Moco(pygame.sprite.Sprite):
                 self.image = self.image.convert_alpha()
                 self.image.set_colorkey((255, 255, 255))
                 self.last_update = current_time
+
+    def impulse(self, entity):
+        if hasattr(entity, 'w_blocked'): 
+            entity.w_blocked = True
+            entity.block_timer = pygame.time.get_ticks()
+        else:
+            print(">>> ¡Advertencia! El objeto recibido no tiene w_blocked.")
+        entity.rect.y += self.boost
+

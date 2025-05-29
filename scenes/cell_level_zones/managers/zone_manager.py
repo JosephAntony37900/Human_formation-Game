@@ -50,7 +50,7 @@ class ZoneManager:
             self.zone_name = "ENEMIGOS"
             self.leucocito_zone.spawn_enemy(level_ref)
             self.lactobacilo_zone.spawn_enemy(level_ref)
-        elif time_to_change_zone >= 50000:  # 50 seg
+        elif time_to_change_zone >= 60000:  # 50 seg
             self.zone_name = "PRINCESS"
             return True  # Indica que es momento de la princesa
         

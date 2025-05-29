@@ -1,6 +1,8 @@
 # scenes/cell_level_zones/managers/collision_manager.py
 import pygame
-from entities.optimized_obstacles import ObstacleMoco, ObstacleGas
+from entities.optimized_obstacles import ObstacleMoco, ObstacleGas, ObstacleVelocity
+
+
 
 class CollisionManager:
     def __init__(self):
@@ -15,12 +17,11 @@ class CollisionManager:
         
         # Obtener grupos de colisión del entity manager
         collision_groups = zone_manager.entity_manager.get_collision_groups()
-        
         # Colisiones con obstáculos (incluyendo mocos y gas)
         for obstacle in collision_groups['obstacles']:
             if sprite_manager.player.rect.colliderect(obstacle.rect):
                 if isinstance(obstacle, ObstacleMoco):
-                    sprite_manager.player.slow_down(None)
+                    obstacle.apply_effect(sprite_manager.player)
                 elif isinstance(obstacle, ObstacleGas):
                     if sprite_manager.player.take_damage(15.0):
                         damage_taken = 15.0
@@ -33,7 +34,7 @@ class CollisionManager:
                 if sprite_manager.player.take_damage(15.0):
                     damage_taken = 15.0
                     print(f"Vida restante (tras tocar obstáculo): {damage_taken}%")
-        
+                    
         # Colisiones del jugador con enemigos del entity_manager
         for enemy in collision_groups['enemies']:
             if sprite_manager.player.rect.colliderect(enemy.rect):
@@ -76,21 +77,21 @@ class CollisionManager:
                     bullet.kill()
         
         # Colisiones de bots con obstáculos
-        if hasattr(sprite_manager, 'bots'):
-            for bot in sprite_manager.bots:
-                # Obstáculos del entity_manager
-                for obstacle in collision_groups['obstacles']:
-                    if bot.rect.colliderect(obstacle.rect):
-                        if isinstance(obstacle, ObstacleGas):
-                            bot.take_damage(15.0)
+        if hasattr(sprite_manager, 'boosts'):
+            for boost in sprite_manager.boosts:
+                if sprite_manager.player.rect.colliderect(boost.rect):
+                   if isinstance(boost, ObstacleVelocity):
+                        boost.player_impulse() 
+                        if hasattr(sprite_manager, 'bots'):
+                            for bot in sprite_manager.bots:
+                                bot.freeze_due_to_player_boost()
+                if hasattr(sprite_manager, 'bots'):
+                   for bot in sprite_manager.bots:
+                       if bot.rect.colliderect(boost.rect):
+                          if isinstance(boost, ObstacleVelocity):
+                             bot.rect = boost.apply_impulse(bot.rect)
                 
-                # Obstáculos del sprite_manager (compatibilidad)
-                if hasattr(sprite_manager, 'obstacles'):
-                    hits = pygame.sprite.spritecollide(bot, sprite_manager.obstacles, False)
-                    if hits:
-                        bot.take_damage(15.0)
-                
-                # Enemigos del entity_manager
+                                
                 for enemy in collision_groups['enemies']:
                     if bot.rect.colliderect(enemy.rect):
                         bot.take_damage(25.0)
