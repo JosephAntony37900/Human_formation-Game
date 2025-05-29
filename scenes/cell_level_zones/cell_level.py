@@ -26,7 +26,6 @@ class CellLevel:
         self.player_lives = 100.0
         self.max_lives = 100.0
         self.background_y = 0
-        self.wait_for_key_after_narrator = False
 
     @property
     def screen(self):
@@ -57,20 +56,19 @@ class CellLevel:
             self.game_manager.clock.tick(DisplaySettings.FPS)
 
     def events(self):
-        self.game_manager.handle_events()
-        if self.wait_for_key_after_narrator:
-            for event in pygame.event.get():
-                if event.type == pygame.KEYDOWN:
-                    self.game_manager.game_paused = False
-                    self.wait_for_key_after_narrator = False
+        for event in pygame.event.get():
+            self.game_manager.handle_events()
+            self.narrator_manager.handle_event(event)
 
     def update(self):
         if not self.game_manager.game_over:
             keys = get_keys()
             narrator_finished = self.narrator_manager.update_narrator()
-            if narrator_finished and self.game_manager.game_paused:
-                self.wait_for_key_after_narrator = True
-            if not self.game_manager.game_paused and not self.wait_for_key_after_narrator:
+
+            if narrator_finished:
+                self.game_manager.game_paused = False
+
+            if not self.game_manager.game_paused:
                 self.game_manager.update_game_state()
                 background_is_moving = self.sprite_manager.update_sprites(
                     keys,
@@ -92,7 +90,6 @@ class CellLevel:
                 )
                 if should_spawn_princess and not self.game_manager.princess_spawned:
                     print("Princess spawned")
-                    # self.background_manager.change_end_background()
                     self.sprite_manager.spawn_princess()
                     self.game_manager.princess_spawned = True
                 self.collision_manager.apply_velocity_boosts(self.sprite_manager)
