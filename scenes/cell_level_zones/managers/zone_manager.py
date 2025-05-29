@@ -7,11 +7,12 @@ from ..zones.waves_Zone import WavesZone
 from ..zones.moco_zone import MocoZone
 
 class ZoneManager:
-    def __init__(self, screen, all_sprites, enemies, spittle_group):
+    def __init__(self, screen, sprite_manager, spittle_group):
         self.screen = screen
         self.zone_name = ""
         self.zone = "gas"
         self.gases_avoided = 0
+        self.sprite_manager = sprite_manager
         
         # Crear el gestor de entidades
         self.entity_manager = EntityManager()
@@ -22,8 +23,10 @@ class ZoneManager:
         self.wave_zone = WavesZone(self.entity_manager)
         self.leucocito_zone = LeucocitoZone(self.entity_manager)
         self.lactobacilo_zone = LactobaciloZone(self.entity_manager, spittle_group)
+
+        self.background_was_changed = False
     
-    def update_zones(self, time_to_change_zone, level_ref, player, bots, background_is_moving):
+    def update_zones(self, time_to_change_zone, level_ref, player, bots, background_is_moving, background_manager):
         # Actualizar todas las entidades
         self.entity_manager.update_all(player, bots)
         
@@ -37,7 +40,7 @@ class ZoneManager:
         # Lógica de zonas por tiempo
         if time_to_change_zone >= 10000 and time_to_change_zone <= 20000:  # 10 seg
             self.zone_name = "GAS"
-            self.gas_zone.spawn_gases_function(level_ref)
+            self.gas_zone.spawn_gases_function(level_ref, self.sprite_manager)
         elif time_to_change_zone >= 20000 and time_to_change_zone <= 30000:  # 20 seg
             self.zone_name = "RAMPAS"
             self.wave_zone.spawn_waves(level_ref)
@@ -45,11 +48,16 @@ class ZoneManager:
             self.zone_name = "MOCOS"
             self.moco_zone.spawn_mocos(level_ref.background_y, player_x, player_y, 
                                      level_ref.game_manager.min_allowed_y, 
-                                     level_ref.game_manager.max_allowed_y)
+                                     level_ref.game_manager.max_allowed_y,
+                                     self.sprite_manager)
         elif time_to_change_zone >= 40000 and time_to_change_zone <= 50000:  # 40 seg
             self.zone_name = "ENEMIGOS"
-            self.leucocito_zone.spawn_enemy(level_ref)
-            self.lactobacilo_zone.spawn_enemy(level_ref)
+            self.leucocito_zone.spawn_enemy(level_ref, self.sprite_manager)
+            self.lactobacilo_zone.spawn_enemy(level_ref, self.sprite_manager)
+        elif time_to_change_zone >= 55000 and not self.background_was_changed:
+            print("Cambiando fondo")
+            background_manager.change_end_background()
+            self.background_was_changed = True
         elif time_to_change_zone >= 60000:  # 50 seg
             self.zone_name = "PRINCESS"
             return True  # Indica que es momento de la princesa

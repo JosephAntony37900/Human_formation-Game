@@ -16,9 +16,8 @@ class CellLevel:
         self.ui_manager = UIManager(self.game_manager.screen)
         self.collision_manager = CollisionManager()
         self.zone_manager = ZoneManager(
-            self.game_manager.screen,
-            self.sprite_manager.all_sprites,
-            self.sprite_manager.enemies,
+            self.game_manager.screen, 
+            self.sprite_manager,
             self.sprite_manager.spittle_group
         )
         self.background_manager = BackgroundManager(self.game_manager.screen)
@@ -84,15 +83,16 @@ class CellLevel:
                 self.background_manager.update_background()
                 self.background_y = self.background_manager.background_y
                 should_spawn_princess = self.zone_manager.update_zones(
-                    self.game_manager.time_to_change_zone,
-                    self,
-                    self.sprite_manager.player,
-                    self.sprite_manager.bots,
-                    background_is_moving
+                    self.game_manager.time_to_change_zone, 
+                    self, 
+                    self.sprite_manager.player, 
+                    self.sprite_manager.bots, 
+                    background_is_moving,
+                    self.background_manager
                 )
                 if should_spawn_princess and not self.game_manager.princess_spawned:
                     print("Princess spawned")
-                    self.background_manager.change_end_background()
+                    # self.background_manager.change_end_background()
                     self.sprite_manager.spawn_princess()
                     self.game_manager.princess_spawned = True
                 self.collision_manager.apply_velocity_boosts(self.sprite_manager)
