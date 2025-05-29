@@ -21,7 +21,7 @@ class GasZone:
         self.last_gas_time = pygame.time.get_ticks()
         self.gas_cooldown = 1000
     
-    def spawn_gases_function(self, level):
+    def spawn_gases_function(self, level, sprite_manager):
         now = pygame.time.get_ticks()
         
         if now - self.last_gas_time > self.gas_cooldown:
@@ -33,6 +33,7 @@ class GasZone:
                 
                 gas = ObstacleGas(x, y)
                 self.entity_manager.add_entity(gas, "obstacle")
+                sprite_manager.gases.add(gas)
                 
                 # Añadir a grupos específicos del level si es necesario
                 if hasattr(level, 'obstacles'):

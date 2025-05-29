@@ -11,8 +11,8 @@ class Castle (pygame.sprite.Sprite):
         self.image.set_colorkey(background_color)
 
         self.rect = self.image.get_rect()
-        self.rect.x = 600
-        self.rect.y = -25
+        self.rect.x = 700
+        self.rect.y = -160
         self.speed = 3
     
     def update(self):

@@ -13,6 +13,8 @@ class SpriteManager:
         self.all_sprites = pygame.sprite.Group()
         self.bots = pygame.sprite.Group()
         self.boosts = pygame.sprite.Group()
+        self.gases = pygame.sprite.Group()
+        self.mocos = pygame.sprite.Group()
         self.enemies = pygame.sprite.Group()
         self.spittle_group = pygame.sprite.Group()
         self.obstacles = pygame.sprite.Group()
@@ -32,6 +34,8 @@ class SpriteManager:
         
         self.all_sprites.add(self.bots)
         self.all_sprites.add(self.boosts)
+        self.all_sprites.add(self.gases)
+        self.all_sprites.add(self.mocos)
     
     def spawn_princess(self):
         princess = PrincessMononoke()
@@ -46,7 +50,7 @@ class SpriteManager:
         
         for bot in self.bots:
             bot.update(min_x + 300, max_x - 300, min_y, max_y, level_ref, 
-                      self.enemies, list(self.obstacles) + list(self.boosts), 
+                      self.enemies, list(self.obstacles) + list(self.boosts) + list(self.gases) + list(self.mocos), 
                       background_is_moving, self.princess)
         
         self.player.bullets.update()
