@@ -18,7 +18,12 @@ dist-ssr
 .idea
 .DS_Store
 *.suo
-*.ntvs*
+.ntvs
 *.njsproj
 *.sln
 *.sw?
+*.pyc
+_pycache_/
+
+echo "*.pyc" >> .gitignore
+echo "__pycache__/" >> .gitignore

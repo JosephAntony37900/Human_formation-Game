@@ -1,3 +1,4 @@
+#entities/Narrador_model.py
 import pygame
 
 class Narrator(pygame.sprite.Sprite):
