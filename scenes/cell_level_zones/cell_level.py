@@ -28,11 +28,10 @@ class CellLevel:
         self.max_lives = 100.0
         self.background_y = 0
 
-        # Mini menu variables
         self.show_menu = False
         font_path = os.path.join("assets/fonts/ka1.ttf")
         self.menu_font = pygame.font.Font(font_path, 30)
-        self.menu_options = ["CONTINUAR", "REINICIAR", "SALIR"]
+        self.menu_options = ["CONTINUAR", "SALIR"]
         self.menu_color = (215, 126, 210)  
         self.border_color = (255, 192, 203)  
         self.shadow_color = (0, 0, 0)
@@ -84,18 +83,12 @@ class CellLevel:
                         self.menu_selected = (self.menu_selected + 1) % len(self.menu_options)
                     elif event.key == pygame.K_RETURN:
                         self.handle_menu_selection()
-
                     elif event.key == pygame.K_c:
-                        self.show_menu = False
-                        self.game_manager.game_paused = False
-                    elif event.key == pygame.K_r:
-                        self.restart_level()
                         self.show_menu = False
                         self.game_manager.game_paused = False
                     elif event.key == pygame.K_x:
                         pygame.quit()
                         exit()
-
             else:
                 if not self.show_menu:
                     self.game_manager.handle_events()
@@ -103,28 +96,14 @@ class CellLevel:
 
     def handle_menu_selection(self):
         sel = self.menu_selected
-        if sel == 0:  
+        if sel == 0:
             self.show_menu = False
             self.game_manager.game_paused = False
-        elif sel == 1:  
-            self.restart_level()
-            self.show_menu = False
-            self.game_manager.game_paused = False
-        elif sel == 2:  
-            pygame.quit()
-            exit()
-
-    def restart_level(self):
-        self.player_lives = self.max_lives
-        self.game_manager.game_over = False
-        self.game_manager.princess_spawned = False
-        self.game_manager.game_paused = False
-        self.menu_selected = 0
-
-        self.sprite_manager.reset()
-        self.zone_manager.reset()
-        self.background_manager.reset()
-        self.narrator_manager.reset()
+        elif sel == 1:
+            self.game_manager.running = False
+            from scenes.IntroSceneV1 import IntroScene
+            intro = IntroScene()
+            intro.run()
 
     def update(self):
         self.frame_count += 1
@@ -223,10 +202,10 @@ class CellLevel:
         pygame.display.update()
 
     def draw_menu(self):
-        width, height = 500, 260
+        width, height = 500, 200
         screen_center = (self.screen.get_width() // 2, self.screen.get_height() // 2)
         menu_surface = pygame.Surface((width, height), pygame.SRCALPHA)
-        menu_surface.fill((20, 20, 20, 220))  
+        menu_surface.fill((20, 20, 20, 220))
 
         border_rect = pygame.Rect(0, 0, width, height)
         pygame.draw.rect(menu_surface, self.border_color, border_rect, 4, border_radius=20)
