@@ -5,13 +5,13 @@ class NarratorManager:
     def __init__(self):
         self.narrator = Narrator()
         self.texts = [
-            "¡Prepárate para la batalla!",
+            "¡Preparate para la batalla!",
             "¡El enemigo se acerca!",
             "¡Lucha valientemente, soldado!"
         ]
         self.current_text_index = 0
         self.max_texts = len(self.texts) - 1
-        self.text_switch_time = 1000  # milisegundos entre textos
+        self.text_switch_time = 3000  # milisegundos entre textos
         self.last_text_switch = pygame.time.get_ticks()
         self.time_after_last_message = None
         self.fade_wait_time = 2000

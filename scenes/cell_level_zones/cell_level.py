@@ -1,3 +1,4 @@
+import os
 import pygame
 from config.Display_settings import DisplaySettings
 from inputs.keyboard import get_keys
@@ -26,6 +27,17 @@ class CellLevel:
         self.player_lives = 100.0
         self.max_lives = 100.0
         self.background_y = 0
+
+        # Mini menu variables
+        self.show_menu = False
+        font_path = os.path.join("assets/fonts/ka1.ttf")
+        self.menu_font = pygame.font.Font(font_path, 30)
+        self.menu_options = ["CONTINUAR", "REINICIAR", "SALIR"]
+        self.menu_color = (215, 126, 210)  
+        self.border_color = (255, 192, 203)  
+        self.shadow_color = (0, 0, 0)
+        self.frame_count = 0
+        self.menu_selected = 0
 
     @property
     def screen(self):
@@ -57,13 +69,73 @@ class CellLevel:
 
     def events(self):
         for event in pygame.event.get():
-            self.game_manager.handle_events()
-            self.narrator_manager.handle_event(event)
+            if event.type == pygame.QUIT:
+                self.game_manager.running = False
+
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    self.show_menu = not self.show_menu
+                    self.game_manager.game_paused = self.show_menu
+
+                elif self.show_menu:
+                    if event.key == pygame.K_UP:
+                        self.menu_selected = (self.menu_selected - 1) % len(self.menu_options)
+                    elif event.key == pygame.K_DOWN:
+                        self.menu_selected = (self.menu_selected + 1) % len(self.menu_options)
+                    elif event.key == pygame.K_RETURN:
+                        self.handle_menu_selection()
+
+                    elif event.key == pygame.K_c:
+                        self.show_menu = False
+                        self.game_manager.game_paused = False
+                    elif event.key == pygame.K_r:
+                        self.restart_level()
+                        self.show_menu = False
+                        self.game_manager.game_paused = False
+                    elif event.key == pygame.K_x:
+                        pygame.quit()
+                        exit()
+
+            else:
+                if not self.show_menu:
+                    self.game_manager.handle_events()
+                    self.narrator_manager.handle_event(event)
+
+    def handle_menu_selection(self):
+        sel = self.menu_selected
+        if sel == 0:  
+            self.show_menu = False
+            self.game_manager.game_paused = False
+        elif sel == 1:  
+            self.restart_level()
+            self.show_menu = False
+            self.game_manager.game_paused = False
+        elif sel == 2:  
+            pygame.quit()
+            exit()
+
+    def restart_level(self):
+        self.player_lives = self.max_lives
+        self.game_manager.game_over = False
+        self.game_manager.princess_spawned = False
+        self.game_manager.game_paused = False
+        self.menu_selected = 0
+
+        self.sprite_manager.reset()
+        self.zone_manager.reset()
+        self.background_manager.reset()
+        self.narrator_manager.reset()
 
     def update(self):
+        self.frame_count += 1
+
         if not self.game_manager.game_over:
             keys = get_keys()
-            narrator_finished = self.narrator_manager.update_narrator()
+
+            if not self.show_menu:
+                narrator_finished = self.narrator_manager.update_narrator()
+            else:
+                narrator_finished = False
 
             if narrator_finished:
                 self.game_manager.game_paused = False
@@ -78,7 +150,8 @@ class CellLevel:
                     self.game_manager.max_allowed_y,
                     self
                 )
-                self.background_manager.update_background()
+                if not self.show_menu:
+                    self.background_manager.update_background()
                 self.background_y = self.background_manager.background_y
                 should_spawn_princess = self.zone_manager.update_zones(
                     self.game_manager.time_to_change_zone, 
@@ -89,18 +162,9 @@ class CellLevel:
                     self.background_manager
                 )
                 if should_spawn_princess and not self.game_manager.princess_spawned:
-                    print("Princess spawned")
                     self.sprite_manager.spawn_princess()
                     self.game_manager.princess_spawned = True
                 self.collision_manager.apply_velocity_boosts(self.sprite_manager)
-
-    @property
-    def min_allowed_y(self):
-        return getattr(self.game_manager, 'min_allowed_y', 300)
-
-    @min_allowed_y.setter
-    def min_allowed_y(self, value):
-        self.game_manager.min_allowed_y = value
 
     def check_collisions(self):
         damage_taken, level_won = self.collision_manager.check_all_collisions(
@@ -146,9 +210,49 @@ class CellLevel:
         self.sprite_manager.draw_sprites(self.game_manager.screen)
         self.zone_manager.draw_all_entities(self.game_manager.screen)
         self.ui_manager.draw_health_bar(self.player_lives, self.max_lives)
+        self.narrator_manager.draw_narrator(self.game_manager.screen)
+
         if self.game_manager.game_paused and not self.game_manager.game_over:
             self.ui_manager.draw_pause_overlay()
-        self.narrator_manager.draw_narrator(self.game_manager.screen)
+            if self.show_menu:
+                self.draw_menu()
+
         if self.game_manager.game_over:
             self.ui_manager.draw_game_over()
+
         pygame.display.update()
+
+    def draw_menu(self):
+        width, height = 500, 260
+        screen_center = (self.screen.get_width() // 2, self.screen.get_height() // 2)
+        menu_surface = pygame.Surface((width, height), pygame.SRCALPHA)
+        menu_surface.fill((20, 20, 20, 220))  
+
+        border_rect = pygame.Rect(0, 0, width, height)
+        pygame.draw.rect(menu_surface, self.border_color, border_rect, 4, border_radius=20)
+
+        arrow_left = "<"
+        arrow_right = ">"
+
+        option_spacing = 60
+        start_y = 40
+
+        for i, option in enumerate(self.menu_options):
+            rect = pygame.Rect(50, start_y + i * option_spacing, width - 100, 50)
+            pygame.draw.rect(menu_surface, self.menu_color, rect, border_radius=15)
+            if i == self.menu_selected:
+                pygame.draw.rect(menu_surface, self.border_color, rect, 4, border_radius=15)
+
+            label = self.menu_font.render(option, True, (255, 255, 255))
+            label_rect = label.get_rect(center=rect.center)
+            menu_surface.blit(label, label_rect)
+
+            if i == self.menu_selected:
+                arrow_l = self.menu_font.render(arrow_left, True, (255, 192, 203))
+                arrow_r = self.menu_font.render(arrow_right, True, (255, 192, 203))
+                arrow_l_rect = arrow_l.get_rect(midright=(rect.left - 15, rect.centery))
+                arrow_r_rect = arrow_r.get_rect(midleft=(rect.right + 15, rect.centery))
+                menu_surface.blit(arrow_l, arrow_l_rect)
+                menu_surface.blit(arrow_r, arrow_r_rect)
+
+        self.screen.blit(menu_surface, (screen_center[0] - width // 2, screen_center[1] - height // 2))

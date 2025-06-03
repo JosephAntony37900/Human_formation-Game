@@ -31,7 +31,7 @@ class Narrator(pygame.sprite.Sprite):
         self.full_text = ""
         self.display_text = ""
         self.text_index = 0
-        self.text_speed = 100  # Texto más lento
+        self.text_speed = 150  # Texto más lento
         self.last_char_time = pygame.time.get_ticks()
         self.image = pygame.Surface((w // 2, sprite_h + 40), pygame.SRCALPHA)
         self.rect = self.image.get_rect(bottomright=(w - 20, h - 20))
@@ -86,21 +86,25 @@ class Narrator(pygame.sprite.Sprite):
         h = max(text_box_h, char_h + 20)
         self.image = pygame.Surface((w, h), pygame.SRCALPHA)
 
-        if self.pixel_bg:
-            pattern = pygame.transform.scale(self.pixel_bg, (4, 4))
-            for x in range(0, text_box_w, pattern.get_width()):
-                for y in range(10, 10 + text_box_h, pattern.get_height()):
-                    self.image.blit(pattern, (x, y))
-        else:
-            pygame.draw.rect(self.image, (255, 255, 255, self.alpha), (0, 10, text_box_w, text_box_h))
-
+        # Draw para redondear el rectangulo (chat gpt me ayudo)
+        bubble_surface = pygame.Surface((text_box_w, text_box_h + 15), pygame.SRCALPHA)
         pygame.draw.rect(
-            self.image,
-            (*self.border_colors[self.border_color_index], self.alpha),
-            (0, 10, text_box_w, text_box_h),
-            width=3
+            bubble_surface,
+            (255, 255, 255, self.alpha),
+            (0, 0, text_box_w, text_box_h),
+            border_radius=25
         )
+        pygame.draw.polygon(
+    bubble_surface,
+    (255, 255, 255, self.alpha),
+    [
+        (text_box_w - 10, text_box_h),     # Izquierda (esto me esta costando)
+        (text_box_w + 25, text_box_h + 20),  # Punta inferior (no hay doc)
+        (text_box_w + 10, text_box_h)      # Derecha del pico (dios esto fue doloroso)
+    ]
+)
 
+        self.image.blit(bubble_surface, (0, 10))
         self.image.blit(text_surface, (20, 20))
         self.image.blit(char_image, (text_box_w, (h - char_h) // 2))
         self.image.set_alpha(self.alpha)
@@ -134,7 +138,7 @@ class Narrator(pygame.sprite.Sprite):
                 self.border_color_index = (self.border_color_index + 1) % len(self.border_colors)
                 self.last_border_switch = current_time
 
-            self.scale_factor = 1.0 + 0.01 * np.sin(current_time * self.scale_speed)  # Menos movimiento
+            self.scale_factor = 1.0 + 0.01 * np.sin(current_time * self.scale_speed)
             self.update_image()
             if self.text_index >= len(self.full_text):
                 self.speaking = False
@@ -157,7 +161,6 @@ class Narrator(pygame.sprite.Sprite):
         elif self.fading_out:
             self.alpha = int(255 * (1 - progress))
             if self.alpha <= 0:
-                # Cambiado: el evento ahora usa "narrator_done": True para evitar conflictos
                 pygame.event.post(pygame.event.Event(pygame.USEREVENT, {"narrator_done": True}))
                 self.kill()
         self.update_image()
