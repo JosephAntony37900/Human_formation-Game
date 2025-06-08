@@ -19,7 +19,7 @@ class CellLevel:
         self.zone_manager = ZoneManager(
             self.game_manager.screen, 
             self.sprite_manager,
-            self.sprite_manager.spittle_group
+            self.sprite_manager.spittle_group,
         )
         self.background_manager = BackgroundManager(self.game_manager.screen)
         self.narrator_manager = NarratorManager()
@@ -37,6 +37,9 @@ class CellLevel:
         self.shadow_color = (0, 0, 0)
         self.frame_count = 0
         self.menu_selected = 0
+        
+        self.min_allowed_y = 500
+        #self.min_allowed_x = 300
 
     @property
     def screen(self):
