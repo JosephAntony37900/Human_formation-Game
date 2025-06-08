@@ -130,7 +130,8 @@ class CellLevel:
                     self.game_manager.max_allowed_x,
                     300,
                     self.game_manager.max_allowed_y,
-                    self
+                    self,
+                    self.game_manager
                 )
                 if not self.show_menu:
                     self.background_manager.update_background()
