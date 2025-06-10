@@ -21,7 +21,7 @@ class IntroScene:
 
         self.arcade_font = pygame.font.Font("assets/Fonts/ka1.ttf", 120)
         self.font = pygame.font.Font("assets/Pixelify_Sans/pixelfont.ttf", 55)
-        self.options = ["Start New Game", "Configuration"]
+        self.options = ["Start New Game", "Configuration", "Salir del Juego"]
         self.selected = 0
         self.state = 'menu'
         self.config_options = ["Sound: Yes", "Sound: No"]
@@ -48,6 +48,9 @@ class IntroScene:
             self.draw()
             self.clock.tick(DisplaySettings.FPS)
 
+        pygame.quit()
+        exit()
+
     def handle_events(self):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -72,8 +75,10 @@ class IntroScene:
                     if self.state == 'menu':
                         if self.selected == 0:
                             self.start_game()
-                        else:
+                        elif self.selected == 1:
                             self.state = 'config'
+                        elif self.selected == 2:
+                            self.running = False
                     else:
                         self.sound_enabled = (self.config_selected == 0)
                         self.state = 'menu'
@@ -120,11 +125,11 @@ class IntroScene:
     def draw_menu(self):
         w, h = self.screen.get_size()
         self.draw_title()
-        padding_x, padding_y = 40, 20
+        padding_x, padding_y = 20, 20
         max_w = max(self.font.size(opt)[0] for opt in self.options) + padding_x * 2
         max_h = self.font.get_height() + padding_y * 2
         total_h = len(self.options) * (max_h + 20) - 20
-        start_y = h // 2 - total_h // 2 + 90
+        start_y = h // 2 - total_h // 2 + 150
 
         for idx, text in enumerate(self.options):
             x = w // 2 - max_w // 2
@@ -140,7 +145,7 @@ class IntroScene:
     def draw_config(self):
         w, h = self.screen.get_size()
         self.draw_title()
-        padding_x, padding_y = 40, 20
+        padding_x, padding_y = 20, 20
         max_w = max(self.font.size(opt)[0] for opt in self.config_options) + padding_x * 2
         max_h = self.font.get_height() + padding_y * 2
         total_h = len(self.config_options) * (max_h + 20) - 20

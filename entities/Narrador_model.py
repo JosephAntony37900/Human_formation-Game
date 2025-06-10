@@ -1,91 +1,166 @@
-#entities/Narrador_model.py
 import pygame
+import numpy as np
 
 class Narrator(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__()
-        # cargar ambas imágenes del narrador
-        self.image_closed = pygame.image.load("assets/characters/narrador/narrador_lentes.png").convert_alpha()
-        self.image_open = pygame.image.load("assets/characters/narrador/narrador_sonrisa.png").convert_alpha()
-        
-        # escalamos las imagenes a un tamaño mas pequeño (un cuarto de la pantalla)
-        display_surface = pygame.display.get_surface()
-        screen_width, screen_height = display_surface.get_width(), display_surface.get_height()
-        self.image_closed = pygame.transform.scale(self.image_closed, (screen_width // 4, screen_height // 4))
-        self.image_open = pygame.transform.scale(self.image_open, (screen_width // 4, screen_height // 4))
-        
-        self.character_image = self.image_closed  
-        self.font = pygame.font.Font("assets/Pixelify_Sans/pixelfont.ttf", 25)  
-        self.text = ""
-        self.image = pygame.Surface((screen_width // 3, screen_height // 3), pygame.SRCALPHA)  
-        self.rect = self.image.get_rect()
-        self.rect.bottomright = (screen_width - 20, screen_height - 20)  
-        self.alpha = 255
-        self.fading = False
-        self.fade_start_time = 0
-        self.fade_duration = 2000
+        self.screen = pygame.display.get_surface()
+        w, h = self.screen.get_size()
+
+        try:
+            self.image_closed = pygame.image.load("assets/characters/narrador/narrador_lentes.png").convert_alpha()
+            self.image_open = pygame.image.load("assets/characters/narrador/narrador_sonrisa.png").convert_alpha()
+        except pygame.error as e:
+            print(f"Error cargando imágenes: {e}")
+            self.image_closed = pygame.Surface((100, 100))
+            self.image_open = pygame.Surface((100, 100))
+            self.image_closed.fill((255, 0, 0))
+            self.image_open.fill((255, 0, 0))
+
+        sprite_w = w // 3
+        sprite_h = int(sprite_w * (self.image_closed.get_height() / self.image_closed.get_width()))
+        self.base_closed = pygame.transform.scale(self.image_closed, (sprite_w, sprite_h))
+        self.base_open = pygame.transform.scale(self.image_open, (sprite_w, sprite_h))
+        self.character_image = self.base_closed
+
+        try:
+            self.font = pygame.font.Font("assets/fonts/ka1.ttf", 36)
+        except pygame.error:
+            self.font = pygame.font.Font(None, 36)
+
+        self.full_text = ""
+        self.display_text = ""
+        self.text_index = 0
+        self.text_speed = 150  # Texto más lento
+        self.last_char_time = pygame.time.get_ticks()
+        self.image = pygame.Surface((w // 2, sprite_h + 40), pygame.SRCALPHA)
+        self.rect = self.image.get_rect(bottomright=(w - 20, h - 20))
+        self.alpha = 0
+        self.fading_in = True
+        self.fading_out = False
+        self.fade_time = pygame.time.get_ticks()
+        self.fade_duration = 1000
         self.speaking = False
-        self.last_switch_time = pygame.time.get_ticks()
-        self.switch_interval = 400  #
-        self.update_image()
+        self.last_switch = pygame.time.get_ticks()
+        self.switch_interval = 300
+        self.border_color_index = 0
+        self.border_colors = [(255, 255, 255), (150, 150, 150)]
+        self.border_switch_time = 500
+        self.last_border_switch = pygame.time.get_ticks()
+        self.scale_factor = 1.0
+        self.scale_speed = 0.002
+        self.blink = False
+        self.blink_start = 0
+        self.blink_duration = 200
+
+        try:
+            self.pixel_bg = pygame.image.load("assets/ui/pixel_bg.png").convert_alpha()
+        except Exception as e:
+            print("No se pudo cargar 'pixel_bg.png':", e)
+            self.pixel_bg = None
+
+        pygame.mixer.init()
+        sample_rate = 44100
+        duration = 0.05
+        freq = 440
+        t = np.linspace(0, duration, int(sample_rate * duration), False)
+        wave = np.sin(2 * np.pi * freq * t) * 0.2
+        stereo_wave = np.column_stack((wave, wave)).astype(np.int16)
+        self.dialogue_sound = pygame.sndarray.make_sound(stereo_wave)
 
     def update_image(self):
-        rendered_text = self.font.render(self.text, True, (0, 0, 0))
-        text_width, text_height = rendered_text.get_size()
-        char_width, char_height = self.character_image.get_size()
-        offset_x = 10
+        text_surface = self.font.render(self.display_text, True, (0, 0, 0))
+        text_w, text_h = text_surface.get_size()
 
-        new_width = text_width + char_width + 40 
-        new_height = max(text_height + 20, char_height + 20)  
-        old_bottomright = self.rect.bottomright
-        self.image = pygame.Surface((new_width, new_height), pygame.SRCALPHA)
-        
-        pygame.draw.rect(self.image, (255, 255, 255, self.alpha), (5, 5, text_width + 20, text_height + 10), border_radius=10)
-        pygame.draw.rect(self.image, (139, 69, 19, self.alpha), (5, 5, text_width + 20, text_height + 10), border_radius=10, width=3)
-        
+        scaled_w = int(self.base_closed.get_width() * self.scale_factor)
+        scaled_h = int(self.base_closed.get_height() * self.scale_factor)
+        char_image = pygame.transform.scale(self.character_image, (scaled_w, scaled_h))
 
-        text_y = 5 + (text_height + 10 - text_height) // 2  
-        self.image.blit(rendered_text, (15, text_y))  
-        x_img = text_width + 25  
-        y_img = (new_height - char_height) // 2 
-        character_surface = self.character_image.copy()
-        character_surface.set_alpha(self.alpha)
-        self.image.blit(character_surface, (x_img, y_img))
+        if self.blink and pygame.time.get_ticks() - self.blink_start < self.blink_duration:
+            char_image.fill((255, 255, 255, 128), special_flags=pygame.BLEND_RGBA_MULT)
+
+        char_w, char_h = char_image.get_size()
+        text_box_w = text_w + 40
+        text_box_h = text_h + 20
+        w = text_box_w + char_w + 20
+        h = max(text_box_h, char_h + 20)
+        self.image = pygame.Surface((w, h), pygame.SRCALPHA)
+
+        # Draw para redondear el rectangulo (chat gpt me ayudo)
+        bubble_surface = pygame.Surface((text_box_w, text_box_h + 15), pygame.SRCALPHA)
+        pygame.draw.rect(
+            bubble_surface,
+            (255, 255, 255, self.alpha),
+            (0, 0, text_box_w, text_box_h),
+            border_radius=25
+        )
+        pygame.draw.polygon(
+    bubble_surface,
+    (255, 255, 255, self.alpha),
+    [
+        (text_box_w - 10, text_box_h),     # Izquierda (esto me esta costando)
+        (text_box_w + 25, text_box_h + 20),  # Punta inferior (no hay doc)
+        (text_box_w + 10, text_box_h)      # Derecha del pico (dios esto fue doloroso)
+    ]
+)
+
+        self.image.blit(bubble_surface, (0, 10))
+        self.image.blit(text_surface, (20, 20))
+        self.image.blit(char_image, (text_box_w, (h - char_h) // 2))
         self.image.set_alpha(self.alpha)
-        self.rect = self.image.get_rect()
-        self.rect.bottomright = old_bottomright
+        self.rect = self.image.get_rect(bottomright=self.rect.bottomright)
 
     def update(self, new_text):
-        self.text = new_text
-        self.speaking = True
-        self.last_switch_time = pygame.time.get_ticks() 
-        self.update_image()
+        if new_text != self.full_text:
+            self.full_text = new_text
+            self.display_text = ""
+            self.text_index = 0
+            self.speaking = True
+            self.last_switch = pygame.time.get_ticks()
+            self.blink = True
+            self.blink_start = pygame.time.get_ticks()
+            self.update_image()
 
     def update_speaking(self):
         if self.speaking:
             current_time = pygame.time.get_ticks()
-            if current_time - self.last_switch_time >= self.switch_interval:
-                if self.character_image == self.image_closed:
-                    self.character_image = self.image_open
-                else:
-                    self.character_image = self.image_closed
-                self.last_switch_time = current_time
-                self.update_image()
+            if self.text_index < len(self.full_text) and current_time - self.last_char_time >= self.text_speed:
+                self.display_text += self.full_text[self.text_index]
+                self.text_index += 1
+                self.last_char_time = current_time
+                self.dialogue_sound.play()
+
+            if current_time - self.last_switch >= self.switch_interval:
+                self.character_image = self.base_open if self.character_image == self.base_closed else self.base_closed
+                self.last_switch = current_time
+
+            if current_time - self.last_border_switch >= self.border_switch_time:
+                self.border_color_index = (self.border_color_index + 1) % len(self.border_colors)
+                self.last_border_switch = current_time
+
+            self.scale_factor = 1.0 + 0.01 * np.sin(current_time * self.scale_speed)
+            self.update_image()
+            if self.text_index >= len(self.full_text):
+                self.speaking = False
 
     def start_fade_out(self):
-        self.fading = True
-        self.fade_start_time = pygame.time.get_ticks()
+        self.fading_out = True
+        self.fading_in = False
+        self.fade_time = pygame.time.get_ticks()
         self.speaking = False
-        self.character_image = self.image_closed  
+        self.character_image = self.base_closed
         self.update_image()
 
     def update_fade(self):
-        if self.fading:
-            t = pygame.time.get_ticks() - self.fade_start_time
-            progress = min(t / self.fade_duration, 1)
-            eased = 1 - (1 - progress) ** 3
-            self.alpha = int(255 * (1 - eased))
+        t = pygame.time.get_ticks() - self.fade_time
+        progress = min(t / self.fade_duration, 1)
+        if self.fading_in:
+            self.alpha = int(255 * progress)
+            if progress >= 1:
+                self.fading_in = False
+        elif self.fading_out:
+            self.alpha = int(255 * (1 - progress))
             if self.alpha <= 0:
-                self.alpha = 0
+                pygame.event.post(pygame.event.Event(pygame.USEREVENT, {"narrator_done": True}))
                 self.kill()
         self.update_image()

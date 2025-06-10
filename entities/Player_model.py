@@ -9,14 +9,15 @@ class Player(pygame.sprite.Sprite):
         self.frames = self.load_frames("assets/characters/cristobal/")
         self.rest_frames = self.load_frames("assets/characters/cristobal/rest/")
         self.shoot_frames = self.load_frames("assets/characters/cristobal/rest_shoot/")  
-
+        self.w_blocked = False 
+        self.block_timer = 0
+        self.block_duration = 500  # milisegundos (2 segundos)
         self.current_frame = 0
         self.image = pygame.transform.scale(self.frames[self.current_frame], (100, 100))
         self.image = self.image.convert_alpha()
         self.image.set_colorkey((0, 0, 0))
         self.rect = self.image.get_rect()
         self.rect.topleft = (x, y)
-
         self.speed = 8
         self.last_update = pygame.time.get_ticks()
         self.frame_rate = 100
@@ -64,10 +65,8 @@ class Player(pygame.sprite.Sprite):
         middle_third_start = screen_width // 8
         middle_third_end = (screen_width * 7) // 8
         background_is_moving = False
-
         restricted_min_x = middle_third_start
         restricted_max_x = middle_third_end - self.rect.width
-
         moving = False
 
         if keys[pygame.K_a]:
@@ -81,26 +80,28 @@ class Player(pygame.sprite.Sprite):
             if self.rect.right > restricted_max_x + self.rect.width:
                 self.rect.right = restricted_max_x + self.rect.width
             moving = True
-
-        if keys[pygame.K_w]:
-            if self.rect.top > min_allowed_y:
-                self.rect.y -= self.speed
-            else:
-                background_is_moving = True
-                level.background_y += 4
-                self.rect.y -= self.speed
-                if self.rect.y < level.min_allowed_y:
-                    level.min_allowed_y = self.rect.y
-            if self.rect.top < min_allowed_y:
-                self.rect.top = min_allowed_y
-            moving = True
-
+            
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_w] and not self.w_blocked:
+            if not self.w_blocked:
+                if self.rect.top > min_allowed_y:
+                   self.rect.y -= self.speed
+                else:
+                    background_is_moving = True
+                    level.background_y += 4
+                    self.rect.y -= self.speed
+                    if self.rect.y < level.min_allowed_y:
+                       level.min_allowed_y = self.rect.y
+                if self.rect.top < min_allowed_y:
+                   self.rect.top = min_allowed_y
+                moving = True
+        elif keys[pygame.K_w] and self.w_blocked:
+            print("¡Tecla W bloqueada!")
         if keys[pygame.K_s]:
             self.rect.y += self.speed
             if self.rect.bottom > max_allowed_y:
                 self.rect.bottom = max_allowed_y
             moving = True
-
         if keys[pygame.K_e]:
             self.weapon_active = not self.weapon_active
 
@@ -155,6 +156,9 @@ class Player(pygame.sprite.Sprite):
                 self.last_update = current_time
         
         self.check_slow_status(level)
+        if self.w_blocked and pygame.time.get_ticks() - self.block_timer >= self.block_duration: 
+            self.w_blocked = False
+
         return background_is_moving
 
     def take_damage(self, damage):
@@ -192,20 +196,23 @@ class Player(pygame.sprite.Sprite):
 
     def slow_down(self, level):
         if not self.slowed:
-            self.speed = 1
-            self.rect.y -= self.speed
+           self.speed = 1
+           self.rect.y -= self.speed
+        if level:
             level.background_speed = 1
-            self.slowed = True
-            self.slow_timer = pygame.time.get_ticks()
+        self.slowed = True
+        self.slow_timer = pygame.time.get_ticks()
+
             
     def check_slow_status(self, level):
         if self.slowed:
            current_time = pygame.time.get_ticks()
-           if current_time - self.slow_timer >= 2000:  # 2000 ms (2 segundos) en lo q regresa a la normalidad
-              self.speed = self.original_speed 
-              level.background_speed = level.original_background_speed
-              self.slowed = False 
-    
+           if current_time - self.slow_timer >= 2000:
+              self.speed = self.original_speed
+              if level:
+                 level.background_speed = level.original_background_speed
+              self.slowed = False
+
     def get_slowed(self):
         if not self.slowed:
             self.slowed = True
