@@ -43,6 +43,21 @@ class Player(pygame.sprite.Sprite):
         self.damage_effect_timer = 0
         self.damage_effect_duration = 300
 
+        self.trail_particles = []
+        self.trail_max_length = 10
+        self.impulsed = False
+        self.impulse_timer = 0
+
+        self.trail_colors = [
+            (255, 0, 0),    # rojo
+            (255, 165, 0),  # naranja
+            (255, 255, 0),  # amarillo
+            (0, 255, 0),    # verde
+            (0, 255, 255),  # cian
+            (0, 0, 255),    # azul
+            (128, 0, 128)   # púrpura
+        ]
+        self.trail_color_index = 0
 
     def load_frames(self, folder_path):
         frames = []
@@ -158,6 +173,13 @@ class Player(pygame.sprite.Sprite):
         self.check_slow_status(level)
         if self.w_blocked and pygame.time.get_ticks() - self.block_timer >= self.block_duration: 
             self.w_blocked = False
+        
+        if self.impulsed:
+            self.add_trail()
+        
+        if self.impulsed and pygame.time.get_ticks() - self.impulse_timer > 300:
+            self.impulsed = False
+            self.trail_particles.clear()
 
         return background_is_moving
 
@@ -171,6 +193,10 @@ class Player(pygame.sprite.Sprite):
         return False
 
     def draw(self, screen):
+
+        for trail_image, pos in self.trail_particles:
+            screen.blit(trail_image, pos)
+
         screen.blit(self.image, self.rect.topleft)
         self.bullets.draw(screen)
 
@@ -222,3 +248,24 @@ class Player(pygame.sprite.Sprite):
         if self.slowed:
             self.slowed = False
             self.speed *= 2
+    
+    def add_trail(self):
+        trail_image = pygame.transform.scale(self.image.copy(), (100, 100))
+        trail_image.set_alpha(100)
+
+        tint_color = self.trail_colors[self.trail_color_index]
+        trail_image = self.tint_image(trail_image, tint_color)
+
+        self.trail_particles.append((trail_image, self.rect.topleft))
+
+        self.trail_color_index = (self.trail_color_index + 1) % len(self.trail_colors)
+
+        if len(self.trail_particles) > self.trail_max_length:
+            self.trail_particles.pop(0)
+
+    def tint_image(self, image, tint_color):
+        tinted_image = image.copy()
+        tint_surface = pygame.Surface(tinted_image.get_size(), pygame.SRCALPHA)
+        tint_surface.fill(tint_color + (0,))  # Agrega alfa 0 para no sobresaturar
+        tinted_image.blit(tint_surface, (0, 0), special_flags=pygame.BLEND_RGBA_ADD)
+        return tinted_image
