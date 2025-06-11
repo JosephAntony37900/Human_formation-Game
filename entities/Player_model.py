@@ -59,6 +59,10 @@ class Player(pygame.sprite.Sprite):
         ]
         self.trail_color_index = 0
 
+        self.speed_lines = []
+        self.speed_line_timer = 0
+        self.speed_line_interval = 30
+
     def load_frames(self, folder_path):
         frames = []
         try:
@@ -176,10 +180,21 @@ class Player(pygame.sprite.Sprite):
         
         if self.impulsed:
             self.add_trail()
+
+            current_time = pygame.time.get_ticks()
+            if current_time - self.speed_line_timer >= self.speed_line_interval:
+                self.create_speed_line()
+                self.speed_line_timer = current_time
+
+            for line in self.speed_lines:
+                line["y"] += 2  # mover hacia abajo
+                line["alpha"] -= 10
+            self.speed_lines = [l for l in self.speed_lines if l["alpha"] > 0]
         
         if self.impulsed and pygame.time.get_ticks() - self.impulse_timer > 300:
             self.impulsed = False
             self.trail_particles.clear()
+            self.speed_lines.clear()
 
         return background_is_moving
 
@@ -196,6 +211,11 @@ class Player(pygame.sprite.Sprite):
 
         for trail_image, pos in self.trail_particles:
             screen.blit(trail_image, pos)
+        
+        for line in self.speed_lines:
+            speed_surface = pygame.Surface((line["width"], line["length"]), pygame.SRCALPHA)
+            speed_surface.fill((*line["color"], line["alpha"]))
+            screen.blit(speed_surface, (line["x"], line["y"]))
 
         screen.blit(self.image, self.rect.topleft)
         self.bullets.draw(screen)
@@ -269,3 +289,17 @@ class Player(pygame.sprite.Sprite):
         tint_surface.fill(tint_color + (0,))  # Agrega alfa 0 para no sobresaturar
         tinted_image.blit(tint_surface, (0, 0), special_flags=pygame.BLEND_RGBA_ADD)
         return tinted_image
+    
+    def create_speed_line(self):
+        line = {
+            "x": self.rect.centerx + 10 - 20 * (pygame.time.get_ticks() % 2),  # alternar lados
+            "y": self.rect.centery + 40,
+            "length": 30,
+            "width": 2,
+            "color": (255, 255, 255),
+            "alpha": 180
+        }
+        self.speed_lines.append(line)
+
+        if len(self.speed_lines) > 15:
+            self.speed_lines.pop(0)
