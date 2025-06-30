@@ -64,6 +64,43 @@ class CellLevel:
     def all_sprites(self):
         return self.sprite_manager.all_sprites
 
+    def restart_game(self):
+       """Reinicia el juego con valores iniciales"""
+       # Reiniciar variables del juego
+       self.player_lives = 100.0
+       self.game_manager.game_over = False
+       self.game_manager.game_paused = False
+       self.show_menu = False
+       self.narrator_is_active = True
+       self.music_paused = False  # Asegurar que music_paused esté en False
+       self.frame_count = 0
+       self.background_y = 0
+       
+       # Reiniciar managers
+       self.sprite_manager = SpriteManager(self.game_manager.screen)
+       
+       self.zone_manager = ZoneManager(
+              self.game_manager.screen, 
+              self.sprite_manager,
+              self.sprite_manager.spittle_group,
+       )
+       self.zone_manager.reset()
+       self.background_manager = BackgroundManager(self.game_manager.screen)
+       self.narrator_manager = NarratorManager()
+       self.narrator_manager.add_to_sprites(self.sprite_manager.all_sprites)
+    
+       # Reiniciar UI manager
+       self.ui_manager = UIManager(self.game_manager.screen)
+       
+       # IMPORTANTE: Reiniciar también las variables de música del GameManager
+       self.game_manager.reset_time()
+       self.game_manager.music_started = False  # Permitir que la música se inicie de nuevo
+       self.game_manager.music_start_time = pygame.time.get_ticks()  # Reiniciar el tiempo de música
+       
+       # Detener música actual completamente
+       pygame.mixer.music.stop()
+       pygame.mixer.stop()
+
     def run(self):
         while self.game_manager.running:
             self.events()
@@ -76,6 +113,20 @@ class CellLevel:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.game_manager.running = False
+
+            # Manejar eventos del menú de game over
+            if self.game_manager.game_over:
+                game_over_action = self.ui_manager.handle_game_over_input(event)
+                if game_over_action == "restart":
+                    self.restart_game()
+                elif game_over_action == "main_menu":
+                    pygame.mixer.music.stop()
+                    pygame.mixer.stop()
+                    self.game_manager.running = False
+                    from scenes.IntroSceneV1 import IntroScene
+                    intro = IntroScene()
+                    intro.run()
+                continue  # No procesar otros eventos si está en game over
 
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
@@ -142,6 +193,11 @@ class CellLevel:
     def update(self):
         self.frame_count += 1
 
+        # Actualizar animación de hover del menú de game over
+        if self.game_manager.game_over:
+            self.ui_manager.update_hover_animation()
+            return  # No actualizar el juego si está en game over
+
         if not self.game_manager.game_over:
             keys = get_keys()
 
@@ -192,6 +248,10 @@ class CellLevel:
                 self.collision_manager.apply_velocity_boosts(self.sprite_manager)
 
     def check_collisions(self):
+        # No verificar colisiones si el juego terminó
+        if self.game_manager.game_over:
+            return
+            
         damage_taken, level_won = self.collision_manager.check_all_collisions(
             self.sprite_manager,
             self.zone_manager,
@@ -201,6 +261,10 @@ class CellLevel:
             self.player_lives -= damage_taken
             if self.player_lives <= 0:
                 self.game_manager.game_over = True
+                # Pausar música cuando el juego termine
+                if pygame.mixer.music.get_busy():
+                    pygame.mixer.music.pause()
+                    self.music_paused = True
         if level_won:
             self.game_manager.win_level(self.game_manager.screen)
         for gas in self.zone_manager.entity_manager.obstacles:
@@ -235,7 +299,10 @@ class CellLevel:
         self.sprite_manager.draw_sprites(self.game_manager.screen)
         self.zone_manager.draw_all_entities(self.game_manager.screen)
         self.ui_manager.draw_health_bar(self.player_lives, self.max_lives)
-        self.narrator_manager.draw_narrator(self.game_manager.screen)
+        
+        # Solo dibujar el narrador si el juego no ha terminado
+        if not self.game_manager.game_over:
+            self.narrator_manager.draw_narrator(self.game_manager.screen)
 
         if self.game_manager.game_paused and not self.game_manager.game_over:
             self.ui_manager.draw_pause_overlay()
