@@ -31,6 +31,7 @@ class CellLevel:
 
         self.show_menu = False
         self.music_paused = False
+        self.narrator_is_active = True
         font_path = os.path.join("assets/fonts/ka1.ttf")
         self.menu_font = pygame.font.Font(font_path, 30)
         self.menu_options = ["CONTINUAR", "SALIR"]
@@ -79,7 +80,8 @@ class CellLevel:
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     self.show_menu = not self.show_menu
-                    self.game_manager.game_paused = self.show_menu
+                    if not self.narrator_is_active:
+                      self.game_manager.game_paused = self.show_menu
                      # Controlar música cuando se abre/cierra el menú
                     if self.show_menu:
                     # Pausar música cuando se abre el menú
@@ -102,7 +104,11 @@ class CellLevel:
                         self.handle_menu_selection()
                     elif event.key == pygame.K_c:
                         self.show_menu = False
-                        self.game_manager.game_paused = False
+                        if not self.narrator_is_active:
+                            self.game_manager.game_paused = False
+                            if self.music_paused:
+                               pygame.mixer.music.unpause()
+                               self.music_paused = False
                     elif event.key == pygame.K_x:
                         pygame.mixer.music.stop()
                         pygame.mixer.stop()
@@ -117,11 +123,12 @@ class CellLevel:
         sel = self.menu_selected
         if sel == 0:
             self.show_menu = False
-            self.game_manager.game_paused = False
-            # Reanudar música al continuar
-            if self.music_paused:
-                pygame.mixer.music.unpause()
-                self.music_paused = False
+            # Solo despausar si el narrador ya terminó
+            if not self.narrator_is_active:
+                self.game_manager.game_paused = False
+                if self.music_paused:
+                    pygame.mixer.music.unpause()
+                    self.music_paused = False
         elif sel == 1:
             # Detener toda la música antes de regresar al menú principal
             pygame.mixer.music.stop()
@@ -144,7 +151,19 @@ class CellLevel:
                 narrator_finished = False
 
             if narrator_finished:
+                self.narrator_is_active = False
                 self.game_manager.game_paused = False
+                # Si la música estaba pausada por el menú, reanudarla
+                if self.music_paused:
+                     pygame.mixer.music.unpause()
+                     self.music_paused = False
+                     
+            # Verificar si el narrador sigue activo
+            elif hasattr(self.narrator_manager, 'narrator') and self.narrator_manager.narrator:
+               self.narrator_is_active = True
+               self.game_manager.game_paused = True
+            else:
+               self.narrator_is_active = False
 
             if not self.game_manager.game_paused:
                 self.game_manager.update_game_state()
