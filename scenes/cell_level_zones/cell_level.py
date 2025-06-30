@@ -1,3 +1,4 @@
+#scenes/cell_level_zones/cell_level.py
 import os
 import pygame
 from config.Display_settings import DisplaySettings
@@ -29,6 +30,7 @@ class CellLevel:
         self.background_y = 0
 
         self.show_menu = False
+        self.music_paused = False
         font_path = os.path.join("assets/fonts/ka1.ttf")
         self.menu_font = pygame.font.Font(font_path, 30)
         self.menu_options = ["CONTINUAR", "SALIR"]
@@ -78,6 +80,18 @@ class CellLevel:
                 if event.key == pygame.K_ESCAPE:
                     self.show_menu = not self.show_menu
                     self.game_manager.game_paused = self.show_menu
+                     # Controlar música cuando se abre/cierra el menú
+                    if self.show_menu:
+                    # Pausar música cuando se abre el menú
+                      if pygame.mixer.music.get_busy():
+                        pygame.mixer.music.pause()
+                        self.music_paused = True
+                    else:
+                     # Reanudar música cuando se cierra el menú
+                      if self.music_paused:
+                        pygame.mixer.music.unpause()
+                        self.music_paused = False
+                    
 
                 elif self.show_menu:
                     if event.key == pygame.K_UP:
@@ -90,6 +104,8 @@ class CellLevel:
                         self.show_menu = False
                         self.game_manager.game_paused = False
                     elif event.key == pygame.K_x:
+                        pygame.mixer.music.stop()
+                        pygame.mixer.stop()
                         pygame.quit()
                         exit()
             else:
@@ -102,7 +118,15 @@ class CellLevel:
         if sel == 0:
             self.show_menu = False
             self.game_manager.game_paused = False
+            # Reanudar música al continuar
+            if self.music_paused:
+                pygame.mixer.music.unpause()
+                self.music_paused = False
         elif sel == 1:
+            # Detener toda la música antes de regresar al menú principal
+            pygame.mixer.music.stop()
+            pygame.mixer.stop()
+            self.music_paused = False
             self.game_manager.running = False
             from scenes.IntroSceneV1 import IntroScene
             intro = IntroScene()
