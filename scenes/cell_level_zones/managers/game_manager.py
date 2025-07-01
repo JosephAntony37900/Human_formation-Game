@@ -128,3 +128,11 @@ class GameManager:
             line_rect.top = y
             surface.blit(line_surface, line_rect)
             y += line_surface.get_height() + line_spacing
+            
+    def reset_time(self):
+      """Reinicia el tiempo del juego"""
+      self.time_to_change_zone = 0
+      self.start_time = pygame.time.get_ticks()
+      self.princess_spawned = False
+      self.music_started = False
+      self.music_start_time = pygame.time.get_ticks()

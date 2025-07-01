@@ -15,7 +15,7 @@ class LactobaciloZone:
         self.enemy_cooldown = 1000
         self.max_enemies = 6
     
-    def spawn_enemy(self, level):
+    def spawn_enemy(self, level, sprite_manager):
         now = pygame.time.get_ticks()
         if now - self.last_enemy_time > self.enemy_cooldown:
             if random.random() < 0.3:
@@ -23,6 +23,7 @@ class LactobaciloZone:
                 
                 enemy = EnemyLactobacilo(self.spittle_group)
                 self.entity_manager.add_entity(enemy, "enemy")
+                sprite_manager.enemies.add(enemy)
                 
                 if hasattr(level, 'enemies'):
                     level.enemies.add(enemy)

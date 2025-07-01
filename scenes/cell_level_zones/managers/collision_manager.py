@@ -115,6 +115,8 @@ class CollisionManager:
             for boost in sprite_manager.boosts:
                 if sprite_manager.player.rect.colliderect(boost.rect):
                     sprite_manager.player.rect = boost.apply_impulse(sprite_manager.player.rect)
+                    sprite_manager.player.impulsed = True
+                    sprite_manager.player.impulse_timer = pygame.time.get_ticks()
 
                 if hasattr(sprite_manager, 'bots'):
                     for bot in sprite_manager.bots:

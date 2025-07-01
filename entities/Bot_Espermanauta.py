@@ -9,13 +9,15 @@ class BotEspermanauta(Player):
         super().__init__(x, y)
         self.image = pygame.transform.scale(self.frames[self.current_frame], (100, 100))
         self.speed = 4
+        self.bot_tint_color = (0, 150, 255)  # Azul claro
+        self.apply_bot_tint()
         self.direction = 1
         self.frozen_by_boost = False
 
         self.direction_y = 1
         self.movement_timer = pygame.time.get_ticks()
         self.change_direction_interval = 2000
-        self.max_health = 150000
+        self.max_health = 15000
         self.health = self.max_health
         self.random_explore_dir = pgmath.Vector2(0, 0)
         self.last_random_time = pygame.time.get_ticks()
@@ -24,6 +26,16 @@ class BotEspermanauta(Player):
         self.slow_timer = 0
         self.slow_duration = 2000  # milisegundos
         self.original_speed = self.speed
+        
+    
+    def apply_bot_tint(self):
+        """Aplica un tinte de color al bot para diferenciarlo"""
+        # Crear superficie con el color del tinte
+        tint_surface = pygame.Surface(self.image.get_size(), pygame.SRCALPHA)
+        tint_surface.fill(self.bot_tint_color + (80,))  # 80 de alpha para transparencia
+        
+        # Aplicar el tinte
+        self.image.blit(tint_surface, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
 
     def update(self, min_x, max_x, min_y, max_y, level, enemies, obstacles, background_is_moving, princesses):
         # Detectar y aplicar efectos de obstáculos
@@ -45,8 +57,8 @@ class BotEspermanauta(Player):
 
             distance = max(1, (dx ** 2 + dy ** 2) ** 0.5)
 
-            self.rect.x += int((self.speed * dx / distance) * 0.75)
-            self.rect.y += int((self.speed * dy / distance) * 0.75)
+            self.rect.x += int((self.speed * dx / distance) * 0.25)
+            self.rect.y += int((self.speed * dy / distance) * 0.25)
 
         self.handle_animation_and_status()
 
@@ -102,7 +114,6 @@ class BotEspermanauta(Player):
                     
                     print(f"Bot {self} empujado por ObstacleMoco")
 
-                
                 # Efecto de gas (daño)
                 elif obstacle.__class__.__name__ == 'ObstacleGas':
                     self.take_damage(20)  # Mismo daño que recibe el jugador
@@ -118,6 +129,8 @@ class BotEspermanauta(Player):
                 self.current_frame = (self.current_frame + 1) % len(self.frames)
                 self.image = pygame.transform.scale(self.frames[self.current_frame], (100, 100))
                 self.image.set_colorkey((0, 0, 0))
+                # Aplicar tinte después de cambiar frame
+                self.apply_bot_tint()
                 self.last_update = current_time
 
     def detect_and_evade(self, objects, background_is_moving, min_x, max_x):

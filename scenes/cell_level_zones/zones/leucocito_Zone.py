@@ -13,7 +13,7 @@ class LeucocitoZone:
         self.enemy_cooldown = 1000
         self.max_enemies = 8
     
-    def spawn_enemy(self, level):
+    def spawn_enemy(self, level, sprite_manager):
         now = pygame.time.get_ticks()
         if now - self.last_enemy_time > self.enemy_cooldown:
             if random.random() < 0.1:
@@ -21,6 +21,7 @@ class LeucocitoZone:
                 
                 enemy = EnemyLeucocito()
                 self.entity_manager.add_entity(enemy, "enemy")
+                sprite_manager.enemies.add(enemy)
                 
                 # Añadir a grupos específicos del level si es necesario
                 if hasattr(level, 'enemies'):
