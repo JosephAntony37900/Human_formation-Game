@@ -11,7 +11,7 @@ class Player(pygame.sprite.Sprite):
         self.shoot_frames = self.load_frames("assets/characters/cristobal/rest_shoot/")  
         self.w_blocked = False 
         self.block_timer = 0
-        self.block_duration = 500  # milisegundos (2 segundos)
+        self.block_duration = 10  # milisegundos (2 segundos)
         self.current_frame = 0
         self.image = pygame.transform.scale(self.frames[self.current_frame], (100, 100))
         self.image = self.image.convert_alpha()
@@ -32,7 +32,7 @@ class Player(pygame.sprite.Sprite):
         self.original_speed = self.speed
         self.slowed = False
         self.slow_timer = 0
-        self.slow_duration = 3000
+        self.slow_duration = 100
         self.shooting = False
         self.shoot_frame_index = 0
         self.shoot_animation_timer = 0
@@ -242,7 +242,7 @@ class Player(pygame.sprite.Sprite):
 
     def slow_down(self, level):
         if not self.slowed:
-           self.speed = 1
+           self.speed = 2.5
            self.rect.y -= self.speed
         if level:
             level.background_speed = 1

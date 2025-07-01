@@ -22,7 +22,7 @@ class PrincessMononoke(pygame.sprite.Sprite):
 
         self.rect = self.image.get_rect()
         self.rect.x = 900
-        self.rect.y = -50
+        self.rect.y =-250
         self.speed = 3
         self.last_update = pygame.time.get_ticks()
         self.frame_rate = 150

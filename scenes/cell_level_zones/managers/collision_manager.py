@@ -2,7 +2,8 @@
 import pygame
 from entities.optimized_obstacles import ObstacleMoco, ObstacleGas, ObstacleVelocity
 
-
+ALTO_EXTRA = 300
+ANCHO_EXTRA = 700  
 
 class CollisionManager:
     def __init__(self):
@@ -52,9 +53,18 @@ class CollisionManager:
         
         # Colisiones con princesa (victoria)
         if game_manager.princess_spawned and hasattr(sprite_manager, 'princess'):
-            hits = pygame.sprite.spritecollide(sprite_manager.player, sprite_manager.princess, False)
-            if hits:
-                level_won = True
+            for princesa in sprite_manager.princess:
+                victory_zone = pygame.Rect(
+                    princesa.rect.left - ANCHO_EXTRA,                      
+                    princesa.rect.top - ALTO_EXTRA,                        
+                    princesa.rect.width + ANCHO_EXTRA * 2,                 
+                    princesa.rect.height + ALTO_EXTRA * 2                  
+                )
+                if sprite_manager.player.rect.colliderect(victory_zone):
+                    level_won = True
+                    break
+
+
         
         # Colisiones de balas con enemigos del entity_manager
         if hasattr(sprite_manager.player, 'bullets'):
