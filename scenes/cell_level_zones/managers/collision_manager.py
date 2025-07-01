@@ -116,15 +116,18 @@ class CollisionManager:
                 # Colisiones de bots con princesa (game over)
         if game_manager.princess_spawned and hasattr(sprite_manager, 'princess'):
             for princesa in sprite_manager.princess:
-                victory_zone = pygame.Rect(
+                princess_zone = pygame.Rect(
                     princesa.rect.left - ANCHO_EXTRA, 
                     princesa.rect.top - ALTO_EXTRA,                        
                     princesa.rect.width + ANCHO_EXTRA * 4,                 
-                    princesa.rect.height + ALTO_EXTRA * 1.5              
+                    princesa.rect.height + ALTO_EXTRA * 1.10              
                 )
-                if sprite_manager.player.rect.colliderect(victory_zone):
-                    damage_taken = 100
-                    break
+                if hasattr(sprite_manager, 'bots'):
+                    for bot in sprite_manager.bots:
+                        if bot.rect.colliderect(princess_zone):
+                            game_manager.game_over = True
+                            print("GAME OVER: Un bot alcanzó a la princesa.")
+                            break
         
         return damage_taken, level_won
     

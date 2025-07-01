@@ -101,7 +101,7 @@ class EnemyLactobacilo(BaseEntity):
         self.state = "moving"
     
     def update(self, player, bots):
-        self.rect.y += self.speed
+        self.rect.y += 8
         
         # now = pygame.time.get_ticks()
         # if now - self.last_spit > self.spit_cooldown:
