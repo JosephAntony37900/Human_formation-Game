@@ -1,3 +1,4 @@
+#scenes/IntroSceneV1.py
 import pygame
 import time
 import os
@@ -8,6 +9,7 @@ from config.Display_settings import DisplaySettings
 class IntroScene:
     def __init__(self):
         pygame.init()
+        pygame.mixer.init()
         self.screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
         pygame.display.set_caption("Human Game")
         self.clock = pygame.time.Clock()
@@ -164,6 +166,8 @@ class IntroScene:
             self.screen.blit(label, label_pos)
 
     def start_game(self):
+        pygame.mixer.music.stop()
+        pygame.mixer.stop()  # Detener todos los sonidos
         fade_surface = pygame.Surface(self.screen.get_size())
         fade_surface.fill((0, 0, 0))
         for alpha in range(0, 256, 10):

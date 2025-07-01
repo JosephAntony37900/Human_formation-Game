@@ -26,6 +26,23 @@ class ZoneManager:
 
         self.background_was_changed = False
     
+    def reset(self):
+        """Reinicia el estado del zone manager"""
+        self.zone_name = ""
+        self.zone = "gas"
+        self.gases_avoided = 0
+        self.background_was_changed = False
+        
+        # Limpiar el entity manager
+        self.entity_manager = EntityManager()
+        
+        # Recrear las zonas con el nuevo entity manager
+        self.gas_zone = GasZone(self.entity_manager)
+        self.moco_zone = MocoZone(self.entity_manager)
+        self.wave_zone = WavesZone(self.entity_manager)
+        self.leucocito_zone = LeucocitoZone(self.entity_manager)
+        self.lactobacilo_zone = LactobaciloZone(self.entity_manager, self.sprite_manager.spittle_group)
+    
     def update_zones(self, time_to_change_zone, level_ref, player, bots, background_is_moving, background_manager):
         # Actualizar todas las entidades
         self.entity_manager.update_all(player, bots)

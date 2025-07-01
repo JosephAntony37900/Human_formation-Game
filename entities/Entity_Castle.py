@@ -12,7 +12,7 @@ class Castle (pygame.sprite.Sprite):
 
         self.rect = self.image.get_rect()
         self.rect.x = 700
-        self.rect.y = -160
+        self.rect.y = -360
         self.speed = 3
     
     def update(self):
