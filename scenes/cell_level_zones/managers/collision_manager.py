@@ -55,10 +55,10 @@ class CollisionManager:
         if game_manager.princess_spawned and hasattr(sprite_manager, 'princess'):
             for princesa in sprite_manager.princess:
                 victory_zone = pygame.Rect(
-                    princesa.rect.left - ANCHO_EXTRA,                      
+                    princesa.rect.left - ANCHO_EXTRA, 
                     princesa.rect.top - ALTO_EXTRA,                        
-                    princesa.rect.width + ANCHO_EXTRA * 2,                 
-                    princesa.rect.height + ALTO_EXTRA * 2                  
+                    princesa.rect.width + ANCHO_EXTRA * 4,                 
+                    princesa.rect.height + ALTO_EXTRA * 1.5              
                 )
                 if sprite_manager.player.rect.colliderect(victory_zone):
                     level_won = True
@@ -101,7 +101,8 @@ class CollisionManager:
                           if isinstance(boost, ObstacleVelocity):
                              bot.rect = boost.apply_impulse(bot.rect)
                 
-                                
+        if hasattr(sprite_manager, 'bots'):
+            for bot in sprite_manager.bots:
                 for enemy in collision_groups['enemies']:
                     if bot.rect.colliderect(enemy.rect):
                         bot.take_damage(25.0)
@@ -113,10 +114,17 @@ class CollisionManager:
                         bot.take_damage(25.0)
                 
                 # Colisiones de bots con princesa (game over)
-                if game_manager.princess_spawned and hasattr(sprite_manager, 'princess'):
-                    hits = pygame.sprite.spritecollide(bot, sprite_manager.princess, False)
-                    if hits:
-                        game_manager.game_over = True
+        if game_manager.princess_spawned and hasattr(sprite_manager, 'princess'):
+            for princesa in sprite_manager.princess:
+                victory_zone = pygame.Rect(
+                    princesa.rect.left - ANCHO_EXTRA, 
+                    princesa.rect.top - ALTO_EXTRA,                        
+                    princesa.rect.width + ANCHO_EXTRA * 4,                 
+                    princesa.rect.height + ALTO_EXTRA * 1.5              
+                )
+                if sprite_manager.player.rect.colliderect(victory_zone):
+                    damage_taken = 100
+                    break
         
         return damage_taken, level_won
     
