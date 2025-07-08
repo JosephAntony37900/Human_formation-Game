@@ -3,8 +3,10 @@ import pygame
 from config.Display_settings import DisplaySettings
 
 class GameManager:
-    def __init__(self):
+    def __init__(self, sound_enabled=True):
+        self.won = False
         pygame.init()
+        self.sound_enabled = sound_enabled
         self.screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
         pygame.display.set_caption(DisplaySettings.TITLE)
         self.clock = pygame.time.Clock()
@@ -48,13 +50,15 @@ class GameManager:
             music_current_time = pygame.time.get_ticks()
             self.time_to_change_zone = pygame.time.get_ticks() - self.start_time
             
-            if not self.music_started and music_current_time - self.music_start_time >= 15000:
+            if self.sound_enabled and not self.music_started and music_current_time - self.music_start_time >= 15000:
                 pygame.mixer.music.load("assets/music/Cosmicv1.mp3")
                 pygame.mixer.music.play(-1)
                 self.music_started = True
+
     
     def win_level(self, screen):
         self.game_over = True
+        self.won = True 
         pygame.mixer.music.stop()
 
         if self.win_image:
@@ -100,7 +104,6 @@ class GameManager:
             for event in pygame.event.get():
                 if event.type == pygame.KEYDOWN or event.type == pygame.QUIT:
                     waiting = False
-                    self.running = False
 
     def wrap_text(self, text, font, max_width):
         words = text.split(' ')

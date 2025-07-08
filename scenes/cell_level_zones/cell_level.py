@@ -12,8 +12,9 @@ from .managers.background_manager import BackgroundManager
 from .managers.narrator_manager import NarratorManager
 
 class CellLevel:
-    def __init__(self):
-        self.game_manager = GameManager()
+    def __init__(self, sound_enabled=True):
+        self.sound_enabled = sound_enabled
+        self.game_manager = GameManager(sound_enabled=sound_enabled)
         self.sprite_manager = SpriteManager(self.game_manager.screen)
         self.ui_manager = UIManager(self.game_manager.screen)
         self.collision_manager = CollisionManager()
@@ -40,10 +41,11 @@ class CellLevel:
         self.shadow_color = (0, 0, 0)
         self.frame_count = 0
         self.menu_selected = 0
-        
         self.min_allowed_y = 500
         #self.min_allowed_x = 300
+        self.won = False
 
+            
     @property
     def screen(self):
         return self.game_manager.screen
@@ -108,6 +110,14 @@ class CellLevel:
             self.check_collisions()
             self.draw()
             self.game_manager.clock.tick(DisplaySettings.FPS)
+            
+            if self.game_manager.won:
+                pygame.mixer.music.stop()
+                pygame.mixer.stop()
+                from scenes.IntroSceneV1 import IntroScene
+                intro = IntroScene()
+                intro.run()
+                return
 
     def events(self):
         for event in pygame.event.get():

@@ -178,5 +178,5 @@ class IntroScene:
             pygame.display.flip()
             pygame.time.delay(30)
         self.running = False
-        game = CellLevel()
+        game = CellLevel(sound_enabled=self.sound_enabled)
         game.run()
