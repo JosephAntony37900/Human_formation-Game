@@ -8,7 +8,7 @@ class BotEspermanauta(Player):
     def __init__(self, x, y):
         super().__init__(x, y)
         self.image = pygame.transform.scale(self.frames[self.current_frame], (100, 100))
-        self.speed = 4
+        self.speed = 3
         self.bot_tint_color = (0, 150, 255)  # Azul claro
         self.apply_bot_tint()
         self.direction = 1
@@ -198,6 +198,8 @@ class BotEspermanauta(Player):
                     self.rect.y += self.speed
                 else:
                     self.rect.y -= self.speed
+            else:
+                self.rect.y += 1
 
         if self.rect.left < min_x:
             self.rect.left = min_x
